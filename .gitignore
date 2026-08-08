@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.expo/
+app-movel/.env
+dist/
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts

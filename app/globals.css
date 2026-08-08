@@ -1,0 +1,1479 @@
+/* =============================================================
+   Sistema de Gestão CETEC — folha de estilo única
+
+   Direção: a ferramenta imita o instrumento que ela substitui — a
+   planilha de ronda impressa presa à prancheta. Daí a face monoespaçada
+   carregando todo código (C-212, ✓/M/X/T, contagem de dias), a régua
+   horizontal separando blocos e o quadrado carimbado do status.
+   Nada de cartão flutuante com sombra: papel não tem sombra.
+   ============================================================= */
+
+:root {
+  /* Papel e tinta — verde-acinzentado frio, não creme */
+  --papel: #f6f8f5;
+  --papel-alto: #ffffff;
+  --tinta: #151f1a;
+  --tinta-media: #4a5a52;
+  --tinta-fraca: #7d8b84;
+  --regua: #d4dbd4;
+  --regua-forte: #b3bfb6;
+
+  /* Sinalização */
+  --verde: #1b5e43; /* institucional, ação */
+  --verde-claro: #e4efe8;
+  --ambar: #8f6109; /* pendência aberta */
+  --ambar-claro: #f8efdc;
+  --tijolo: #97302f; /* atrasado, prioridade alta */
+  --tijolo-claro: #f7e5e3;
+
+  --fonte-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --fonte-mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo,
+    Consolas, monospace;
+
+  /* Coluna de leitura contínua. Texto corrido não melhora depois de
+     ~70rem, então isto não acompanha a largura da tela. */
+  --largura: 68rem;
+  /* Telas de painel, que ganham com mais colunas em vez de mais linha. */
+  --largura-painel: 110rem;
+  --raio: 3px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--fonte-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--verde);
+}
+
+:focus-visible {
+  outline: 2px solid var(--verde);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Texto só para leitor de tela: o glifo do carimbo não se lê sozinho. */
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Estrutura ---------- */
+
+.casca {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.barra {
+  border-bottom: 1px solid var(--regua);
+  background: var(--papel-alto);
+}
+
+.barra__interno {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.barra__marca {
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.barra__nav {
+  display: flex;
+  gap: 1.25rem;
+  margin-left: auto;
+  align-items: center;
+}
+
+.barra__link {
+  font-size: 0.875rem;
+  color: var(--tinta-media);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.barra__link:hover {
+  color: var(--tinta);
+}
+
+.barra__link--ativo {
+  color: var(--tinta);
+  border-bottom-color: var(--verde);
+}
+
+.conteudo {
+  max-width: var(--largura);
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  flex: 1;
+}
+
+/* ---------- Painel largo ---------- */
+/* Em 1920 a coluna de 68rem deixa metade da tela vazia e empurra tudo
+   para baixo. As telas de acompanhamento passam a usar duas colunas: a
+   principal com o que muda hoje, a lateral com o que serve de contexto
+   — histórico, série, agregado. A lateral desaparece abaixo de 1200px,
+   onde empilhar é melhor do que espremer. */
+
+/* A própria presença do painel alarga a casca. Evita que cada página
+   larga precise avisar o layout — que é um Server Component e não sabe
+   qual rota está renderizando. */
+.conteudo:has(.painel) {
+  max-width: var(--largura-painel);
+}
+
+.painel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (min-width: 1200px) {
+  .painel {
+    grid-template-columns: minmax(0, 1.9fr) minmax(20rem, 1fr);
+    gap: 3rem;
+  }
+
+  /* A lateral acompanha a rolagem: ela é referência de consulta, não
+     conteúdo a percorrer. */
+  .painel__lateral {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+/* Faixa de números no topo, antes de qualquer lista. */
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1px;
+  background: var(--regua);
+  border: 1px solid var(--regua);
+  border-radius: var(--raio);
+  margin-top: 1.25rem;
+  overflow: hidden;
+}
+
+.indicador {
+  background: var(--papel-alto);
+  padding: 0.75rem 0.875rem;
+}
+
+.indicador__valor {
+  display: block;
+  font-family: var(--fonte-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicador__rotulo {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  margin-top: 0.25rem;
+}
+
+.indicador--alerta .indicador__valor {
+  color: var(--ambar);
+}
+.indicador--critico .indicador__valor {
+  color: var(--tijolo);
+}
+.indicador--bom .indicador__valor {
+  color: var(--verde);
+}
+
+/* Procedência do texto gerado por modelo. Deliberadamente discreta e
+   deliberadamente presente: quem lê precisa saber o que é fato apurado
+   e o que é interpretação. */
+.nota-de-origem {
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  line-height: 1.5;
+  margin: 0.75rem 0 0;
+  padding-left: 0.625rem;
+  border-left: 2px solid var(--regua);
+}
+
+/* ---------- Gráficos ---------- */
+
+.grafico {
+  margin: 0;
+}
+
+.grafico__tela {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.grafico__rotulo {
+  font-family: var(--fonte-mono);
+  font-size: 9px;
+  fill: var(--tinta-fraca);
+}
+
+.grafico__legenda {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  margin-top: 0.5rem;
+}
+
+.grafico__chave::before {
+  content: '';
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+  margin-right: 0.375rem;
+  vertical-align: -1px;
+}
+
+.grafico__chave--verde::before {
+  background: var(--verde);
+}
+.grafico__chave--ambar::before {
+  background: var(--ambar);
+}
+.grafico__chave--cinza::before {
+  background: var(--regua);
+}
+
+.barras {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.barras__item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem 0;
+}
+
+.barras__rotulo {
+  font-size: 0.8125rem;
+  width: 6.5rem;
+  flex-shrink: 0;
+  color: var(--tinta-media);
+}
+
+.barras__trilho {
+  flex: 1;
+  height: 0.75rem;
+  background: var(--papel-alto);
+  border: 1px solid var(--regua);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.barras__preenchimento {
+  display: block;
+  height: 100%;
+  background: var(--ambar);
+}
+
+.barras__preenchimento--critico {
+  background: var(--tijolo);
+}
+
+.barras__valor {
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  width: 2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Tipografia ---------- */
+
+.sobrescrito {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  margin: 0 0 0.375rem;
+}
+
+.titulo {
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.secao {
+  margin-top: 2.5rem;
+}
+
+.secao__cabeca {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--regua-forte);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.secao__titulo {
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.secao__contagem {
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  color: var(--tinta-fraca);
+  margin-left: auto;
+}
+
+.vazio {
+  font-size: 0.9375rem;
+  color: var(--tinta-media);
+  padding: 0.75rem 0;
+  margin: 0;
+}
+
+/* ---------- Aviso do dia ---------- */
+
+.aviso {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.6875rem 0.875rem;
+  border-radius: var(--raio);
+  font-size: 0.9375rem;
+  margin-top: 1.25rem;
+}
+
+.aviso--ronda {
+  background: var(--verde-claro);
+  color: var(--verde);
+}
+
+.aviso--folga {
+  background: var(--papel-alto);
+  border: 1px solid var(--regua);
+  color: var(--tinta-media);
+}
+
+.aviso__marcador {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ---------- Faixa da ronda: o painel de leitura rápida ---------- */
+/* Cada sala é um azulejo que se preenche conforme os itens entram.
+   De longe dá para ver quanto da ronda falta sem ler um número. */
+
+.faixa {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.faixa__bloco {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.faixa__rotulo {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  width: 7rem;
+  flex-shrink: 0;
+  padding-top: 0.5rem;
+}
+
+.faixa__azulejos {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.azulejo {
+  position: relative;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  min-width: 4.5rem;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--regua-forte);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  overflow: hidden;
+}
+
+.azulejo__preenchimento {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--verde-claro);
+}
+
+.azulejo__codigo,
+.azulejo__fracao {
+  position: relative;
+}
+
+.azulejo__codigo {
+  font-weight: 600;
+  display: block;
+}
+
+.azulejo__fracao {
+  font-size: 0.6875rem;
+  color: var(--tinta-fraca);
+}
+
+a.azulejo:hover {
+  border-color: var(--tinta-media);
+}
+
+.azulejo--completo {
+  border-color: var(--verde);
+}
+
+.azulejo--completo .azulejo__fracao {
+  color: var(--verde);
+}
+
+/* ---------- Carimbo de status ---------- */
+
+.carimbo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border: 1px solid currentColor;
+  border-radius: var(--raio);
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.carimbo--ok {
+  color: var(--verde);
+}
+.carimbo--manutencao {
+  color: var(--ambar);
+  background: var(--ambar-claro);
+}
+.carimbo--resolvido,
+.carimbo--trocado {
+  color: var(--tinta-media);
+}
+
+/* ---------- Lista de linhas ---------- */
+
+.linhas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.linha {
+  display: flex;
+  align-items: baseline;
+  gap: 0.875rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--regua);
+}
+
+.linha:last-child {
+  border-bottom: none;
+}
+
+.linha__codigo {
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  width: 5.5rem;
+  flex-shrink: 0;
+}
+
+.linha__principal {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.linha__titulo {
+  display: block;
+}
+
+.linha__nota {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--tinta-media);
+  margin-top: 0.125rem;
+}
+
+.linha__medida {
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  color: var(--tinta-fraca);
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.linha__medida--alerta {
+  color: var(--ambar);
+  font-weight: 600;
+}
+
+.linha__medida--critico {
+  color: var(--tijolo);
+  font-weight: 600;
+}
+
+.etiqueta {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--raio);
+  border: 1px solid currentColor;
+}
+
+.etiqueta--alta {
+  color: var(--tijolo);
+  background: var(--tijolo-claro);
+}
+.etiqueta--media {
+  color: var(--ambar);
+}
+.etiqueta--baixa {
+  color: var(--tinta-fraca);
+}
+
+/* ---------- Botões ---------- */
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--raio);
+  border: 1px solid var(--verde);
+  background: var(--verde);
+  color: #fff;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.botao:hover {
+  background: #17513a;
+}
+
+.botao--discreto {
+  background: transparent;
+  color: var(--verde);
+}
+
+.botao--discreto:hover {
+  background: var(--verde-claro);
+}
+
+.botao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ---------- Entrada ---------- */
+
+.campo {
+  display: block;
+  margin-bottom: 0.875rem;
+}
+
+.campo__rotulo {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--tinta-media);
+  margin-bottom: 0.25rem;
+}
+
+.campo__entrada {
+  width: 100%;
+  font: inherit;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--regua-forte);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+  color: var(--tinta);
+}
+
+.campo__entrada:focus {
+  border-color: var(--verde);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--verde-claro);
+}
+
+.erro {
+  color: var(--tijolo);
+  font-size: 0.875rem;
+  margin: 0 0 0.875rem;
+}
+
+/* ---------- Entrada ---------- */
+
+.entrada {
+  max-width: 22rem;
+  margin: 5rem auto;
+  padding: 0 1.25rem;
+}
+
+.entrada__separador {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: var(--tinta-fraca);
+  font-size: 0.75rem;
+}
+
+.entrada__separador::before,
+.entrada__separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--regua);
+}
+
+/* ---------- Folha do plano do dia ---------- */
+
+.folha__cabeca {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 2px solid var(--tinta);
+  padding-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.folha__acoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Quadrado para riscar a caneta: a folha existe para ser carregada. */
+.risque {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 1px solid var(--regua-forte);
+  border-radius: 2px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.folha__rodape {
+  margin-top: 3rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--regua);
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  color: var(--tinta-fraca);
+}
+
+/* ---------- Importador ---------- */
+
+.importador__area {
+  min-height: 14rem;
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.importador__previa {
+  overflow-x: auto;
+  border: 1px solid var(--regua);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+}
+
+.importador__previa table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.8125rem;
+}
+
+.importador__previa th,
+.importador__previa td {
+  text-align: left;
+  padding: 0.4375rem 0.625rem;
+  border-bottom: 1px solid var(--regua);
+  white-space: nowrap;
+}
+
+.importador__previa th {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  font-weight: 600;
+}
+
+.importador__previa tr:last-child td {
+  border-bottom: none;
+}
+
+.importador__exemplo {
+  font-family: var(--fonte-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  background: var(--papel-alto);
+  border: 1px solid var(--regua);
+  border-radius: var(--raio);
+  padding: 0.75rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+/* ---------- Conversa do chamado ---------- */
+
+.mensagem {
+  list-style: none;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--regua);
+}
+
+.mensagem:last-child {
+  border-bottom: none;
+}
+
+.mensagem__cabeca {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.mensagem__data {
+  font-family: var(--fonte-mono);
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  font-variant-numeric: tabular-nums;
+}
+
+.mensagem__remetente {
+  font-size: 0.8125rem;
+  color: var(--tinta-media);
+}
+
+.mensagem__assunto {
+  margin: 0.25rem 0 0.5rem;
+  font-weight: 500;
+}
+
+/* Texto de e-mail de sistema: quebras de linha carregam sentido, mas a
+   largura não pode estourar a coluna. */
+.mensagem__corpo {
+  font-family: var(--fonte-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--tinta-media);
+  background: var(--papel-alto);
+  border: 1px solid var(--regua);
+  border-radius: var(--raio);
+  padding: 0.75rem;
+  margin: 0;
+  max-height: 22rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.colar-email {
+  border: 1px solid var(--regua-forte);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+  padding: 0.875rem;
+}
+
+.colar-email__resumo {
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9375rem;
+}
+
+/* ---------- Assistente ---------- */
+
+.chat {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+}
+
+.chat__conversa {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding-bottom: 1.5rem;
+}
+
+.chat__inicio {
+  padding: 1rem 0;
+}
+
+.chat__sugestoes {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.fala {
+  max-width: 46rem;
+}
+
+/* A fala do operador recua e ganha régua à esquerda; a do assistente
+   fica rente. Sem balão colorido: o resto do sistema é papel, e balão
+   de chat seria a única coisa aqui a parecer aplicativo de conversa. */
+.fala--operador {
+  align-self: flex-end;
+  border-left: 2px solid var(--verde);
+  padding-left: 0.75rem;
+}
+
+.fala--assistente {
+  align-self: flex-start;
+}
+
+.fala__texto {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.fala__texto--discreto {
+  color: var(--tinta-fraca);
+  font-size: 0.875rem;
+}
+
+.confirmacao {
+  border: 1px solid var(--ambar);
+  background: var(--ambar-claro);
+  border-radius: var(--raio);
+  padding: 0.875rem;
+  max-width: 46rem;
+}
+
+.confirmacao__titulo {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ambar);
+  margin: 0 0 0.375rem;
+}
+
+.confirmacao__acao {
+  margin: 0 0 0.75rem;
+  font-weight: 500;
+}
+
+.confirmacao__botoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat__entrada {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  position: sticky;
+  bottom: 0;
+  background: var(--papel);
+  border-top: 1px solid var(--regua);
+  padding: 0.875rem 0;
+}
+
+.chat__entrada .campo__entrada {
+  flex: 1;
+}
+
+/* ---------- Impressão ---------- */
+
+@media print {
+  :root {
+    --papel: #fff;
+    --papel-alto: #fff;
+  }
+
+  body {
+    font-size: 11pt;
+  }
+
+  .barra,
+  .folha__acoes,
+  .nao-imprime {
+    display: none !important;
+  }
+
+  .conteudo {
+    max-width: none;
+    padding: 0;
+  }
+
+  .secao {
+    margin-top: 1.25rem;
+    break-inside: avoid;
+  }
+
+  .aviso {
+    border: 1px solid #000;
+    background: none !important;
+    color: #000 !important;
+  }
+
+  .azulejo__preenchimento {
+    display: none;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+}
+
+/* ---------- Telas estreitas ---------- */
+
+@media (max-width: 640px) {
+  .faixa__rotulo {
+    width: auto;
+    padding-top: 0;
+  }
+
+  .faixa__bloco {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .linha {
+    flex-wrap: wrap;
+  }
+
+  .linha__medida {
+    text-align: left;
+  }
+}
+
+/* ---------- Lançamento da ronda ---------- */
+/* Alvos grandes: isso vai ser usado de pé, no corredor, com uma mão só. */
+
+.item-ronda {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--regua);
+  list-style: none;
+}
+
+.item-ronda:last-child {
+  border-bottom: none;
+}
+
+.item-ronda__linha {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.item-ronda__nome {
+  flex: 1;
+  min-width: 8rem;
+  font-weight: 500;
+}
+
+.item-ronda__opcoes {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.item-ronda__nota {
+  margin-top: 0.5rem;
+}
+
+.opcao {
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--regua-forte);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+  color: var(--tinta-media);
+  font-family: var(--fonte-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.opcao:hover:not(:disabled) {
+  border-color: var(--tinta-media);
+}
+
+.opcao:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.opcao--ativa.opcao--ok {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #fff;
+}
+
+.opcao--ativa.opcao--manutencao {
+  background: var(--ambar);
+  border-color: var(--ambar);
+  color: #fff;
+}
+
+.opcao--ativa.opcao--resolvido,
+.opcao--ativa.opcao--trocado {
+  background: var(--tinta-media);
+  border-color: var(--tinta-media);
+  color: #fff;
+}
+
+/* ---------- Lançamento de suprimento ---------- */
+
+.lancamento {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.lancamento__quantidade {
+  width: 5.5rem;
+  text-align: right;
+  font-family: var(--fonte-mono);
+}
+
+.linha--empilha {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* ---------- Salas ---------- */
+
+.sala__turma {
+  margin-left: 0.5rem;
+}
+
+.sala__acoes {
+  display: flex;
+  gap: 0.875rem;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* ---------- Tarefas e chamados ---------- */
+/* Formulário de uma linha só: adicionar tarefa não pode custar mais do
+   que rabiscar num post-it, senão volta a ser rabiscado num post-it. */
+
+.formulario-curto {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.formulario-curto .campo__entrada {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.formulario-curto__estreito {
+  flex: 0 0 auto !important;
+  min-width: 8rem !important;
+  width: 8rem;
+}
+
+.item-trabalho {
+  list-style: none;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--regua);
+}
+
+.item-trabalho:last-child {
+  border-bottom: none;
+}
+
+.item-trabalho__linha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.item-trabalho__linha + .item-trabalho__linha {
+  margin-top: 0.5rem;
+}
+
+.item-trabalho__titulo {
+  flex: 1;
+  min-width: 10rem;
+  font-weight: 500;
+}
+
+.item-trabalho__local {
+  font-family: var(--fonte-mono);
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  margin-left: 0.5rem;
+}
+
+.item-trabalho__opcoes {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.item-trabalho__nota {
+  margin-top: 0.5rem;
+}
+
+.item-trabalho__historico {
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+
+.item-trabalho__protocolo {
+  flex: 0 0 auto;
+  width: 12rem;
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+}
+
+/* Etiqueta que também é botão de transição de status. */
+.etiqueta--acao {
+  background: transparent;
+  color: var(--tinta-fraca);
+  border-color: var(--regua-forte);
+  font-family: var(--fonte-mono);
+  cursor: pointer;
+  line-height: 1.6;
+}
+
+.etiqueta--acao:hover:not(:disabled) {
+  color: var(--tinta);
+  border-color: var(--tinta-media);
+}
+
+.etiqueta--acao:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.etiqueta--acao-ativa {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #fff;
+}
+
+/* ---------- Planta da sala ---------- */
+/* A sala vista de cima, na mesma linguagem de papel: célula com traço
+   fino, sem sombra. A cor só aparece quando algo está fora de ordem —
+   uma planta inteiramente em ordem é uma planta sem cor. */
+
+.planta__grid {
+  display: grid;
+  gap: 3px;
+  margin: 1rem 0;
+  max-width: 42rem;
+}
+
+.planta__celula {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--raio);
+  background: transparent;
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  color: var(--tinta-media);
+  padding: 0;
+  cursor: pointer;
+}
+
+.planta__celula:disabled {
+  cursor: default;
+}
+
+/* Célula vazia é o chão da sala: some, mas continua alvo no modo edição. */
+.planta__celula--livre {
+  border-style: dashed;
+  border-color: transparent;
+}
+
+button.planta__celula--livre:hover {
+  border-color: var(--regua-forte);
+}
+
+.planta__celula--classe {
+  border-color: var(--regua-forte);
+  background: var(--papel-alto);
+}
+
+.planta__celula--classe:hover:not(:disabled) {
+  border-color: var(--tinta-media);
+}
+
+.planta__celula--quebrada {
+  border-color: var(--tijolo);
+  background: var(--tijolo-claro);
+  color: var(--tijolo);
+  font-weight: 600;
+}
+
+.planta__celula--faltando {
+  border-style: dashed;
+  border-color: var(--ambar);
+  background: var(--ambar-claro);
+  color: var(--ambar);
+}
+
+.planta__celula--selecionada {
+  outline: 2px solid var(--verde);
+  outline-offset: 1px;
+}
+
+/* Mobiliário fixo: presente no desenho, mudo na leitura. */
+.planta__celula--quadro,
+.planta__celula--mesa_professor,
+.planta__celula--porta,
+.planta__celula--projetor {
+  color: var(--tinta-fraca);
+  background: var(--regua);
+}
+
+.planta__celula--porta {
+  background: transparent;
+  border-color: var(--regua-forte);
+  border-style: dashed;
+}
+
+.planta__celula--quadro {
+  background: var(--tinta-media);
+  color: var(--papel-alto);
+}
+
+/* ---------- Barra de edição da planta ---------- */
+
+.planta__ferramentas {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--regua);
+}
+
+.planta__medida {
+  width: 5.5rem;
+}
+
+.planta__medida .campo__entrada {
+  font-family: var(--fonte-mono);
+  text-align: right;
+}
+
+.planta__paleta {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.botao--selecionado {
+  background: var(--verde);
+  color: #fff;
+}
+
+/* ---------- Painel da classe selecionada ---------- */
+
+.planta__painel {
+  border: 1px solid var(--regua-forte);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+  padding: 0.875rem;
+  max-width: 42rem;
+}
+
+.planta__painel-titulo {
+  margin: 0 0 0.625rem;
+  font-size: 0.9375rem;
+}
+
+.planta__acoes {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.botao--quebrada {
+  border-color: var(--tijolo);
+  color: var(--tijolo);
+}
+
+.botao--quebrada:hover {
+  background: var(--tijolo-claro);
+}
+
+.botao--faltando {
+  border-color: var(--ambar);
+  color: var(--ambar);
+}
+
+.botao--faltando:hover {
+  background: var(--ambar-claro);
+}
+
+/* ---------- Histórico da classe ---------- */
+/* Log corrido, do mais recente para o mais antigo. Data em mono para as
+   colunas alinharem sem tabela. */
+
+.planta__historico {
+  margin-top: 0.875rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--regua);
+}
+
+.planta__historico .vazio {
+  padding: 0.25rem 0;
+}
+
+.planta__historico .linhas {
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.planta__registro {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  padding: 0.3125rem 0;
+  border-bottom: 1px solid var(--regua);
+  flex-wrap: wrap;
+}
+
+.planta__registro:last-child {
+  border-bottom: none;
+}
+
+.planta__registro-data {
+  font-family: var(--fonte-mono);
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.planta__registro-status {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.planta__registro-status--ok {
+  color: var(--verde);
+}
+.planta__registro-status--quebrada {
+  color: var(--tijolo);
+}
+.planta__registro-status--faltando {
+  color: var(--ambar);
+}
+
+.planta__registro-nota {
+  font-size: 0.8125rem;
+  color: var(--tinta-media);
+  flex: 1;
+  min-width: 10rem;
+}
+
+.planta__rodape {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}

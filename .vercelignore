@@ -1,0 +1,5 @@
+# O app Expo não faz parte do site e não deve subir para o build.
+app-movel
+
+# Edge Functions rodam no Supabase, não no Vercel.
+supabase/functions

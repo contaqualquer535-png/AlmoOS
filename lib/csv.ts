@@ -48,7 +48,9 @@ export function lerCsv(texto: string): string[][] {
   let dentroDeAspas = false;
 
   for (let i = 0; i < limpo.length; i += 1) {
-    const c = limpo[i];
+    // i < length garante que existe; o compilador não deduz isso com
+    // noUncheckedIndexedAccess ligado.
+    const c = limpo[i] as string;
 
     if (dentroDeAspas) {
       if (c === '"') {
@@ -105,9 +107,10 @@ export function normalizarCabecalho(nome: string): string {
  */
 export function lerCsvComCabecalho(texto: string): Array<Record<string, string>> {
   const linhas = lerCsv(texto);
-  if (linhas.length < 2) return [];
+  const primeira = linhas[0];
+  if (!primeira || linhas.length < 2) return [];
 
-  const cabecalho = linhas[0].map(normalizarCabecalho);
+  const cabecalho = primeira.map(normalizarCabecalho);
 
   return linhas.slice(1).map((linha) => {
     const registro: Record<string, string> = {};
@@ -134,7 +137,7 @@ export function lerData(valor: string): string | null {
   }
 
   const partes = texto.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
-  if (!partes) return null;
+  if (!partes?.[1] || !partes[2] || !partes[3]) return null;
 
   const dia = Number(partes[1]);
   const mes = Number(partes[2]);

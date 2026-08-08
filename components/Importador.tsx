@@ -73,8 +73,9 @@ export function Importador() {
   }, [texto]);
 
   const colunasFaltando = useMemo(() => {
-    if (linhas.length === 0) return [];
-    const presentes = new Set(Object.keys(linhas[0]));
+    const primeira = linhas[0];
+    if (!primeira) return [];
+    const presentes = new Set(Object.keys(primeira));
     // 'descricao' e 'observacao' são opcionais; as demais, não.
     const OPCIONAIS = new Set(['descricao', 'observacao', 'protocolo', 'sala', 'idade', 'fila']);
     const obrigatorias = formato.colunas.filter((c) => !OPCIONAIS.has(c));

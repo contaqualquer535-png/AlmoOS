@@ -344,7 +344,7 @@ const ESTADOS_DO_SERVI: Record<string, 'em_atendimento' | 'concluido'> = {
  */
 function abertoEmPelaIdade(idade: string): string | null {
   const dias = idade.match(/(\d+)\s*d/);
-  if (!dias) return null;
+  if (!dias?.[1]) return null;
 
   const data = new Date();
   data.setUTCDate(data.getUTCDate() - Number(dias[1]));

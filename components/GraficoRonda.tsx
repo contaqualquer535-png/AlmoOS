@@ -10,7 +10,13 @@ import type { DiaDaSerie } from '@/lib/types/database';
  * padrão seg/qua/sex tem que ser visível no desenho.
  */
 export function GraficoRonda({ serie }: { serie: DiaDaSerie[] }) {
-  if (serie.length === 0) {
+  const primeiro = serie[0];
+  const ultimo = serie[serie.length - 1];
+
+  // Testar os extremos em vez do comprimento: com
+  // noUncheckedIndexedAccess ligado, `serie.length > 0` não convence o
+  // compilador de que serie[0] existe, e o teste direto convence.
+  if (!primeiro || !ultimo) {
     return <p className="vazio">Sem histórico de ronda ainda.</p>;
   }
 
@@ -81,10 +87,10 @@ export function GraficoRonda({ serie }: { serie: DiaDaSerie[] }) {
         })}
 
         <text x="0" y={altura - 4} className="grafico__rotulo">
-          {dataCurta(serie[0].dia)}
+          {dataCurta(primeiro.dia)}
         </text>
         <text x={largura} y={altura - 4} textAnchor="end" className="grafico__rotulo">
-          {dataCurta(serie[serie.length - 1].dia)}
+          {dataCurta(ultimo.dia)}
         </text>
       </svg>
 

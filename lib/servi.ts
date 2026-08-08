@@ -28,10 +28,10 @@ export interface MensagemDoServi {
 /** `[Chamado#001538977]` ou, na falta, `#001538977` solto no assunto. */
 export function extrairProtocolo(texto: string): string | null {
   const entreColchetes = texto.match(/\[\s*chamado\s*#\s*(\d{4,})\s*\]/i);
-  if (entreColchetes) return entreColchetes[1];
+  if (entreColchetes?.[1]) return entreColchetes[1];
 
   const solto = texto.match(/chamado\s*#?\s*(\d{6,})/i);
-  return solto ? solto[1] : null;
+  return solto?.[1] ?? null;
 }
 
 /**
@@ -41,20 +41,20 @@ export function extrairProtocolo(texto: string): string | null {
 export function extrairTitulo(assunto: string): string | null {
   const semPrefixo = assunto.replace(/\[[^\]]*\]\s*/g, '').trim();
   const posDoisPontos = semPrefixo.match(/:\s*(.+)$/);
-  const bruto = (posDoisPontos ? posDoisPontos[1] : semPrefixo).trim();
+  const bruto = (posDoisPontos?.[1] ?? semPrefixo).trim();
   return bruto || null;
 }
 
 /** Filas do SERVi têm a forma GLOG::SMGE::Manutenção. */
 export function extrairFila(texto: string): string | null {
   const achado = texto.match(/\b([A-Z]{2,}(?:::[^\s,;<>"']+){1,3})/);
-  return achado ? achado[1] : null;
+  return achado?.[1] ?? null;
 }
 
 function extrairCabecalho(bruto: string, nome: string): string | null {
   const padrao = new RegExp(`^${nome}:\\s*(.+)$`, 'im');
   const achado = bruto.match(padrao);
-  return achado ? achado[1].trim() : null;
+  return achado?.[1]?.trim() ?? null;
 }
 
 /**

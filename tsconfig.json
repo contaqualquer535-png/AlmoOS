@@ -18,5 +18,7 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // app-movel é um projeto Expo com tsconfig, alias e tipos próprios.
+  // Sem excluí-lo aqui, o build do Next tenta compilar React Native.
+  "exclude": ["node_modules", "app-movel", "supabase/functions"]
 }

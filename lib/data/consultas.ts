@@ -244,10 +244,13 @@ export function semanaDe(iso: string): { inicio: string; fim: string } {
 
 /** Primeiro e último dia do mês que contém a data. */
 export function mesDe(iso: string): { inicio: string; fim: string } {
-  const [ano, mes] = iso.split('-').map(Number);
-  const inicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
+  const ano = Number(iso.slice(0, 4));
+  const mes = Number(iso.slice(5, 7));
+  const mesComZero = String(mes).padStart(2, '0');
+  // Dia 0 do mês seguinte é o último dia deste — evita tabela de
+  // 30/31 dias e acerta fevereiro bissexto de graça.
   const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
-  return { inicio, fim: `${ano}-${String(mes).padStart(2, '0')}-${ultimo}` };
+  return { inicio: `${ano}-${mesComZero}-01`, fim: `${ano}-${mesComZero}-${ultimo}` };
 }
 
 /** Agregação ao vivo de um período qualquer. Não persiste nada. */

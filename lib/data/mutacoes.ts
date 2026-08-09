@@ -226,6 +226,46 @@ export async function anotarProgresso(id: string, observacao: string): Promise<R
   return { ok: true };
 }
 
+// ---------- Materiais do roteiro ----------
+
+export async function marcarMaterial(dados: {
+  pendenciaId: string;
+  descricao: string;
+  quantidade: number;
+  unidade?: string;
+  suprimentoId?: string;
+}): Promise<Resultado> {
+  const descricao = dados.descricao.trim();
+  if (!descricao) return { ok: false, mensagem: 'Diga o que precisa levar.' };
+  if (!Number.isFinite(dados.quantidade) || dados.quantidade <= 0) {
+    return { ok: false, mensagem: 'A quantidade precisa ser maior que zero.' };
+  }
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('materiais_da_pendencia').insert({
+    pendencia_id: dados.pendenciaId,
+    descricao,
+    quantidade: dados.quantidade,
+    unidade: dados.unidade?.trim() || 'un',
+    suprimento_id: dados.suprimentoId || null,
+  });
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath('/roteiro');
+  return { ok: true };
+}
+
+export async function removerMaterial(id: string): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('materiais_da_pendencia').delete().eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath('/roteiro');
+  return { ok: true };
+}
+
 // ---------- Análise sob demanda ----------
 
 /**

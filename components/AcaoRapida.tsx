@@ -50,11 +50,18 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
 
   useEffect(() => {
     function aoTeclar(evento: KeyboardEvent) {
-      if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 'k') {
+      // `key` pode vir indefinido em eventos sintéticos e durante
+      // composição de acento. Sem esta guarda, o toLowerCase lança a
+      // cada tecla e o console vira um muro de erro.
+      const tecla = typeof evento.key === 'string' ? evento.key : '';
+
+      if ((evento.ctrlKey || evento.metaKey) && tecla.toLowerCase() === 'k') {
         evento.preventDefault();
         setAberto((atual) => !atual);
+        return;
       }
-      if (evento.key === 'Escape') setAberto(false);
+
+      if (tecla === 'Escape') setAberto(false);
     }
 
     window.addEventListener('keydown', aoTeclar);

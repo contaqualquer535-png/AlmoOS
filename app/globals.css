@@ -150,7 +150,10 @@ a {
   max-width: var(--largura);
   width: 100%;
   margin: 0 auto;
-  padding: 2rem 1.25rem 4rem;
+  /* O rodapé generoso reserva a faixa do botão flutuante da ação
+     rápida. Sem isso ele pousa em cima do conteúdo, e clicar num campo
+     que esteja embaixo dele aciona o botão em vez de focar o campo. */
+  padding: 2rem 1.25rem 6rem;
   flex: 1;
 }
 
@@ -1467,11 +1470,176 @@ a.azulejo:hover {
   bottom: 0;
   background: var(--papel);
   border-top: 1px solid var(--regua);
-  padding: 0.875rem 0;
+  /* A folga à direita mantém o campo fora da faixa do botão flutuante. */
+  padding: 0.875rem 5rem 0.875rem 0;
 }
 
 .chat__entrada .campo__entrada {
   flex: 1;
+}
+
+/* ---------- Materiais de uma pendência ---------- */
+
+.materiais {
+  margin-top: 0.5rem;
+}
+
+.materiais__lista {
+  list-style: none;
+  margin: 0 0 0.375rem;
+  padding: 0;
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.materiais__item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  background: var(--verde-claro);
+  color: var(--verde);
+  border-radius: var(--raio);
+  padding: 0.125rem 0.25rem 0.125rem 0.5rem;
+}
+
+.materiais__remover {
+  border: none;
+  background: none;
+  color: var(--verde);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+/* ---------- Roteiro de reparos ---------- */
+/* Reproduz o documento em uso. Diferente do resto do sistema, esta tela
+   é feita para o papel: cabeçalho de tabela em barra escura, quadrado
+   para riscar a caneta, e nada que dependa de cor para ser lido. */
+
+.tabela-roteiro {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.tabela-roteiro th {
+  background: var(--tinta-media);
+  color: var(--papel-alto);
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 650;
+  padding: 0.375rem 0.5rem;
+}
+
+.tabela-roteiro td {
+  border: 1px solid var(--regua-forte);
+  padding: 0.375rem 0.5rem;
+  vertical-align: top;
+}
+
+.tabela-roteiro__qtd {
+  width: 5rem;
+  white-space: nowrap;
+  font-family: var(--fonte-mono);
+  font-weight: 600;
+}
+
+.tabela-roteiro__onde {
+  color: var(--tinta-media);
+  font-size: 0.8125rem;
+}
+
+.tabela-roteiro__falta {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--tijolo);
+  font-weight: 600;
+}
+
+.roteiro__dispensadas {
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--tinta-media);
+  margin-top: 0.75rem;
+}
+
+.roteiro__bloco {
+  margin-top: 1.5rem;
+  break-inside: avoid;
+}
+
+.roteiro__bloco-nome {
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--verde);
+  border-bottom: 2px solid var(--verde);
+  padding-bottom: 0.25rem;
+  margin: 0 0 0.75rem;
+}
+
+.roteiro__sala {
+  margin-bottom: 0.875rem;
+  break-inside: avoid;
+}
+
+.roteiro__sala-nome {
+  margin: 0 0 0.25rem;
+  font-family: var(--fonte-mono);
+  font-size: 0.9375rem;
+  color: var(--tijolo);
+}
+
+.roteiro__turma {
+  font-family: var(--fonte-ui);
+  font-size: 0.8125rem;
+  color: var(--tinta-media);
+  margin-left: 0.625rem;
+}
+
+.roteiro__itens {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1rem;
+}
+
+.roteiro__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.1875rem 0;
+  font-size: 0.875rem;
+}
+
+.roteiro__item .risque {
+  margin-top: 0.1875rem;
+  align-self: flex-start;
+}
+
+.roteiro__idade {
+  color: var(--tijolo);
+  font-size: 0.8125rem;
+}
+
+@media print {
+  .tabela-roteiro th {
+    background: #000 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .roteiro__bloco-nome {
+    color: #000;
+    border-bottom-color: #000;
+  }
+
+  .roteiro__sala-nome {
+    color: #000;
+  }
 }
 
 /* ---------- Impressão ---------- */
@@ -1688,7 +1856,11 @@ a.azulejo:hover {
   margin-bottom: 1.25rem;
 }
 
-.formulario-curto .campo__entrada {
+/* Só filho direto. Com seletor descendente, esta regra alcançava também
+   os campos dentro de <label class="planta__medida">, que mede 5.5rem —
+   o campo de 12rem transbordava o rótulo e cobria o controle seguinte,
+   que então não recebia mais clique nem foco. */
+.formulario-curto > .campo__entrada {
   flex: 1;
   min-width: 12rem;
 }
@@ -1697,6 +1869,17 @@ a.azulejo:hover {
   flex: 0 0 auto !important;
   min-width: 8rem !important;
   width: 8rem;
+}
+
+/* Rótulo com campo embutido: ele é que define a largura, e o campo
+   ocupa o que sobrar dentro dele. */
+.formulario-curto > label {
+  flex: 0 0 auto;
+}
+
+.formulario-curto label .campo__entrada {
+  width: 100%;
+  min-width: 0;
 }
 
 .item-trabalho {
@@ -1883,11 +2066,15 @@ button.planta__celula--livre:hover {
 
 .planta__medida {
   width: 5.5rem;
+  flex: 0 0 auto;
 }
 
 .planta__medida .campo__entrada {
+  width: 100%;
+  min-width: 0;
   font-family: var(--fonte-mono);
   text-align: right;
+  margin: 0;
 }
 
 .planta__paleta {

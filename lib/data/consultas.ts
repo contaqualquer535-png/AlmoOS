@@ -21,6 +21,8 @@ import type {
   ItemInventario,
   RecursoStatus,
   LocalComTurmas,
+  MaterialDaPendencia,
+  Roteiro,
   MovimentacaoInventario,
   PendenciaAberta,
   ElementoPlanta,
@@ -336,6 +338,55 @@ export async function buscarPendenciasPorBloco(): Promise<BlocoDaSerie[]> {
 
   if (error) throw descrever('Não foi possível carregar as pendências por bloco', error);
   return (data ?? []) as unknown as BlocoDaSerie[];
+}
+
+// ---------- Roteiro de reparos ----------
+
+export async function buscarRoteiro(data?: string): Promise<Roteiro> {
+  const supabase = await criarClienteServidor();
+  const { data: resultado, error } = await supabase.rpc('montar_roteiro', {
+    p_data: data ?? dataDeHoje(),
+  });
+
+  if (error) throw descrever('Não foi possível montar o roteiro', error);
+  return resultado as unknown as Roteiro;
+}
+
+export interface PendenciaComMateriais extends PendenciaAberta {
+  materiais: MaterialDaPendencia[];
+}
+
+/** Pendências abertas com o que já foi marcado para levar. */
+export async function buscarPendenciasComMateriais(): Promise<PendenciaComMateriais[]> {
+  const supabase = await criarClienteServidor();
+
+  const [pendencias, materiais] = await Promise.all([
+    supabase
+      .from('vw_pendencias_abertas')
+      .select('*')
+      .order('bloco')
+      .order('ordem_visita', { nullsFirst: false }),
+    supabase.from('materiais_da_pendencia').select('*'),
+  ]);
+
+  if (pendencias.error) {
+    throw descrever('Não foi possível carregar as pendências', pendencias.error);
+  }
+  if (materiais.error) {
+    throw descrever('Não foi possível carregar os materiais', materiais.error);
+  }
+
+  const porPendencia = new Map<string, MaterialDaPendencia[]>();
+  for (const m of (materiais.data ?? []) as MaterialDaPendencia[]) {
+    const lista = porPendencia.get(m.pendencia_id);
+    if (lista) lista.push(m);
+    else porPendencia.set(m.pendencia_id, [m]);
+  }
+
+  return ((pendencias.data ?? []) as PendenciaAberta[]).map((p) => ({
+    ...p,
+    materiais: porPendencia.get(p.id) ?? [],
+  }));
 }
 
 // ---------- Painel ----------

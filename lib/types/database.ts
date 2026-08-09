@@ -263,6 +263,53 @@ export interface Insight {
   erro: string | null;
 }
 
+// ---------- Roteiro de reparos ----------
+
+export interface MaterialDoRoteiro {
+  descricao: string;
+  quantidade: number;
+  unidade: string;
+  onde: string;
+  em_estoque: number | null;
+  e_suprimento: boolean;
+}
+
+export interface ItemDoRoteiro {
+  texto: string;
+  item: string;
+  dias: number;
+}
+
+export interface SalaDoRoteiro {
+  codigo: string;
+  turmas: string[];
+  itens: ItemDoRoteiro[];
+}
+
+export interface BlocoDoRoteiro {
+  bloco: string | null;
+  ordem: number;
+  salas: SalaDoRoteiro[];
+}
+
+export interface Roteiro {
+  data: string;
+  materiais: MaterialDoRoteiro[];
+  salas_sem_pendencia: string[];
+  blocos: BlocoDoRoteiro[];
+  total_pendencias: number;
+  total_salas: number;
+}
+
+export interface MaterialDaPendencia {
+  id: string;
+  pendencia_id: string;
+  descricao: string;
+  quantidade: number;
+  unidade: string;
+  suprimento_id: string | null;
+}
+
 // ---------- Previsões calculadas ----------
 
 export interface Previsoes {

@@ -13,6 +13,8 @@ const ITENS = [
   { href: '/suprimentos', rotulo: 'Suprimentos' },
   { href: '/recursos', rotulo: 'Recursos' },
   { href: '/inventario', rotulo: 'Inventário' },
+  { href: '/pendencias', rotulo: 'Pendências' },
+  { href: '/roteiro', rotulo: 'Roteiro' },
   { href: '/tarefas', rotulo: 'Tarefas' },
   { href: '/relatorios', rotulo: 'Relatórios' },
   { href: '/plano', rotulo: 'Plano do dia' },

@@ -42,6 +42,8 @@ app/
   (app)/assistente   chat com ferramentas, escrita sob confirmação
   (app)/importar     carga de CSV: patrimônio, ronda em papel, chamados
   (app)/relatorios   agregação por período, ao vivo e congelada
+  (app)/pendencias   o que está aberto e o material de cada uma
+  (app)/roteiro      folha de reparos imprimível, por bloco
   (app)/tarefas      tarefas internas e chamados ao SEAMB
   (app)/chamados/:id conversa do chamado, vinda dos e-mails do SERVi
   (app)/planta/:cod  planta da sala; o índice foi absorvido por /salas

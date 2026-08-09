@@ -24,7 +24,7 @@ const ITENS = [
   { href: '/trabalho', rotulo: 'Trabalho' },
   { href: '/chamados', rotulo: 'Chamados' },
   { href: '/salas', rotulo: 'Salas' },
-  { href: '/suprimentos', rotulo: 'Estoque' },
+  { href: '/almoxarifado', rotulo: 'Almoxarifado' },
   { href: '/relatorios', rotulo: 'Relatórios' },
   { href: '/assistente', rotulo: 'Assistente' },
 ] as const;

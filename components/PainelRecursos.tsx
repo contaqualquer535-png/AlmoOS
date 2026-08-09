@@ -35,6 +35,9 @@ export function PainelRecursos({
   const [responsavel, setResponsavel] = useState('');
   const [localId, setLocalId] = useState('');
   const [previsao, setPrevisao] = useState('');
+  // Recurso é contado, não etiquetado — mas as unidades têm identidade
+  // na prática. "Caixa F" mora aqui.
+  const [observacao, setObservacao] = useState('');
 
   const [editando, setEditando] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
@@ -60,6 +63,7 @@ export function PainelRecursos({
     setResponsavel('');
     setLocalId('');
     setPrevisao('');
+    setObservacao('');
   }
 
   function abrirEdicao(recurso: RecursoStatus) {
@@ -118,6 +122,7 @@ export function PainelRecursos({
       responsavel: responsavel || undefined,
       localId: localId || undefined,
       previsaoDevolucao: previsao || undefined,
+      observacao: observacao || undefined,
     });
 
     setOcupado(false);
@@ -348,6 +353,13 @@ export function PainelRecursos({
                     onChange={(e) => setPrevisao(e.target.value)}
                     aria-label="Devolve quando"
                   />
+                  <input
+                    className="campo__entrada"
+                    type="text"
+                    placeholder="Qual unidade (ex.: caixa F)"
+                    value={observacao}
+                    onChange={(e) => setObservacao(e.target.value)}
+                  />
                   <button
                     className="botao"
                     type="button"
@@ -370,6 +382,9 @@ export function PainelRecursos({
                       <li className="recurso__retirada" key={emprestimo.id}>
                         <span className="recurso__quantidade">{emprestimo.quantidade}</span>
                         <span className="recurso__destino">
+                          {emprestimo.observacao ? (
+                            <strong>{emprestimo.observacao} · </strong>
+                          ) : null}
                           {emprestimo.responsavel ?? 'sem responsável'}
                           {emprestimo.local_id ? ` · ${locais[emprestimo.local_id]}` : ''}
                         </span>

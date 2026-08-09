@@ -113,22 +113,199 @@ fica para outro dia — está no `docs/GUIA.md`, passo 6c.
 
 ---
 
-## E — Insights diários
+## E — Insights diários (cron)
+
+### E1. Publicar a função
 
 ```
 cd C:\Users\andrin\Desktop\almoOS
-npx supabase secrets set GEMINI_API_KEY=sua_chave
-npx supabase secrets set INSIGHTS_SEGREDO=escolha_uma_senha_longa
-npx supabase functions deploy insights
 ```
 
-Depois, no painel do Supabase: **Integrations → Cron → Create job**,
-diário às 06:00, chamando a função por HTTP com o header
-`x-insights-segredo`.
+```
+npx supabase functions deploy insights --no-verify-jwt
+```
 
-Os **pontos de atenção** na tela Hoje já funcionam sem nada disso. Isto
-acrescenta só os **padrões observados**, e eles só terão o que dizer
-depois de algumas semanas de uso.
+O `--no-verify-jwt` é o mesmo caso do `email-servi`: o portão do Supabase
+exige um `Authorization` em formato JWT, e as chaves novas
+(`sb_publishable_…`) não são JWT. Quem protege o endpoint é o segredo.
+
+```
+npx supabase secrets set INSIGHTS_SEGREDO=umasenhalongasoletrasenumeros
+```
+
+```
+npx supabase secrets set GEMINI_API_KEY=sua_chave_do_ai_studio
+```
+
+Use só letras e números no segredo. O PowerShell come aspas e símbolos, e
+o sintoma disso é um 401 que parece bug.
+
+### E2. Ligar as extensões
+
+No painel do Supabase: **Database → Extensions**, procure e ative:
+
+- `pg_cron` — o agendador
+- `pg_net` — permite ao banco fazer requisições HTTP
+
+Sem as duas o passo seguinte falha.
+
+### E3. Agendar
+
+No **SQL Editor**, trocando o `SEU_REF` e o segredo:
+
+```sql
+select cron.schedule(
+  'insights-diario',
+  -- Cron do Supabase roda em UTC. 09:00 UTC é 06:00 em Caxias do Sul.
+  '0 9 * * *',
+  $$
+  select net.http_post(
+    url := 'https://SEU_REF.supabase.co/functions/v1/insights',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-insights-segredo', 'umasenhalongasoletrasenumeros'
+    ),
+    body := '{}'::jsonb
+  );
+  $$
+);
+```
+
+**Confira** que foi criado:
+
+```sql
+select jobname, schedule, active from cron.job;
+```
+
+**Teste sem esperar até amanhã** rodando o corpo do job à mão — o mesmo
+`select net.http_post(...)` acima, solto. Depois veja se a linha
+apareceu:
+
+```sql
+select gerado_em, modelo, erro from insights_ia order by gerado_em desc limit 3;
+```
+
+Se `erro` estiver preenchido, a mensagem diz o motivo. Os pontos de
+atenção são gravados mesmo quando o modelo falha — por isso a linha
+existe de qualquer jeito.
+
+**Para desfazer:** `select cron.unschedule('insights-diario');`
+
+### E4. O que ele acrescenta
+
+Pouco, no começo, e vale saber. Os **pontos de atenção** da tela Hoje já
+funcionam sem nada disso, porque são SQL. O cron acrescenta os **padrões
+observados** e as **previsões qualitativas**, e essas só terão o que
+dizer depois de algumas semanas de dado real.
+
+Você também não precisa dele para usar a IA: o botão **Analisar agora**,
+no cartão de Previsões, roda a mesma análise na hora.
+
+---
+
+## G — App no celular, do zero ao instalado
+
+O Expo Go da Play Store **não serve**: ele está no SDK 54 e o projeto no
+57. Você gera o próprio APK, o que resolve isso e é o que você quer no
+fim das contas.
+
+### G1. Preparar
+
+```
+cd C:\Users\andrin\Desktop\almoOS\app-movel
+```
+
+```
+npm install
+```
+
+```
+npx expo install --check
+```
+
+Use o **cmd**, não o terminal do VS Code — foi lá que o Git funcionou.
+
+### G2. Conta no Expo
+
+```
+npx eas-cli@latest login
+```
+
+Se não tiver conta, crie em expo.dev. É gratuita e o plano free cobre
+builds Android.
+
+```
+npx eas-cli@latest build:configure
+```
+
+### G3. Preencher as chaves
+
+Abra `app-movel/eas.json`. As duas chaves do Supabase precisam estar nos
+**três** perfis: `development`, `preview` e `production`. O build roda na
+nuvem e não enxerga o seu `.env`.
+
+Já estão preenchidas nos três — só confira se são as mesmas do
+`.env.local`.
+
+### G4. Development build
+
+Este é o APK para desenvolver: ele carrega o código do seu PC e
+recarrega quando você altera algo.
+
+```
+npm run dev-build
+```
+
+De 10 a 25 minutos. O EAS devolve um link.
+
+1. Abra o link **no celular**, baixe e instale
+2. O Android vai pedir para permitir instalação de fonte desconhecida —
+   permita
+3. No cmd: `npx expo start --dev-client`
+4. Abra o app instalado e leia o QR code do terminal
+5. Entre com o mesmo e-mail e senha do site
+
+### G5. APK de uso
+
+Quando o app estiver como você quer, gere o autônomo — este abre sozinho,
+sem o seu computador ligado, e é o que vai para a ronda:
+
+```
+npm run apk
+```
+
+Instale por cima; é o mesmo pacote, então substitui.
+
+A diferença: o `development` recarrega do seu PC e serve para
+desenvolver; o `preview` tem o código embutido. Toda mudança de código
+exige `npm run apk` de novo.
+
+### G6. O teste que decide
+
+Antes de usar numa ronda de verdade:
+
+1. Entre no app com internet e deixe sincronizar
+2. **Modo avião**
+3. Lance uma sala inteira, registre um consumo, escaneie um item
+4. Abra **Sincronização** e confira que tudo está listado
+5. **Feche o app pela lista de recentes e abra de novo** — a fila
+   continua lá?
+6. Desligue o modo avião, toque em "Enviar agora"
+7. Abra o site e confira que os lançamentos chegaram
+
+O passo 5 é o que importa. Fila que some ao fechar o app é pior do que
+não ter fila, porque você só descobre depois de já ter confiado.
+
+### G7. Se der errado
+
+**"Project is incompatible with this version of Expo Go"** — você leu o
+QR com o Expo Go em vez do app que instalou. Use o seu.
+
+**Build falha com erro de versão de pacote** — `npx expo install --check`
+e aceite as correções.
+
+**App abre e fica em branco** — provável falta das chaves no `eas.json`
+do perfil que você construiu.
 
 ---
 

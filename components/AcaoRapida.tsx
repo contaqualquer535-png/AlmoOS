@@ -55,6 +55,7 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
   const [itemId, setItemId] = useState('');
   const [quantidade, setQuantidade] = useState('1');
   const [responsavel, setResponsavel] = useState('');
+  const [observacao, setObservacao] = useState('');
 
   useEffect(() => {
     function aoTeclar(evento: KeyboardEvent) {
@@ -85,6 +86,7 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
     setPrazo('');
     setQuantidade('1');
     setResponsavel('');
+    setObservacao('');
     setErro(null);
   }
 
@@ -144,6 +146,7 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
         quantidade: Number(quantidade),
         responsavel: responsavel || undefined,
         localId: localId || undefined,
+        observacao: observacao || undefined,
       });
       confirmacao = 'Retirada registrada.';
     }
@@ -391,6 +394,18 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
                 </>
               ) : null}
             </div>
+
+            {/* Recurso é contado, não etiquetado — mas as unidades têm
+                identidade na prática. "Caixa F" mora aqui. */}
+            {aba === 'retirada' ? (
+              <input
+                className="campo__entrada"
+                type="text"
+                placeholder="Qual unidade, estado, detalhe (ex.: caixa F)"
+                value={observacao}
+                onChange={(e) => setObservacao(e.target.value)}
+              />
+            ) : null}
           </>
         )}
 

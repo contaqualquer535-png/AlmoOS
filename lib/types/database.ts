@@ -263,6 +263,37 @@ export interface Insight {
   erro: string | null;
 }
 
+// ---------- Almoxarifado ----------
+
+export type NaturezaNoAlmoxarifado = 'suprimento' | 'recurso' | 'patrimonio';
+
+export interface ItemDoAlmoxarifado {
+  natureza: NaturezaNoAlmoxarifado;
+  id: string;
+  nome: string;
+  detalhe: string | null;
+  unidade: string;
+  quantidade: number;
+  minimo: number;
+  em_falta: boolean;
+  codigo_barras: string | null;
+  com_quem: string | null;
+  fora: number;
+  dias_restantes: number | null;
+}
+
+export interface ResumoDoAlmoxarifado {
+  suprimentos: { itens: number; em_falta: number };
+  recursos: { tipos: number; disponiveis: number; fora: number; em_falta: number };
+  patrimonio: { itens: number; emprestados: number; atrasados: number };
+}
+
+export const ROTULO_NATUREZA: Record<NaturezaNoAlmoxarifado, string> = {
+  suprimento: 'Consumível',
+  recurso: 'Emprestável',
+  patrimonio: 'Patrimônio',
+};
+
 // ---------- Uso da IA ----------
 
 export interface UsoDeIa {

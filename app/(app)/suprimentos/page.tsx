@@ -54,6 +54,9 @@ export default async function PaginaSuprimentos() {
         className="nao-imprime"
         style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}
       >
+        <Link className="botao botao--discreto" href="/almoxarifado">
+          Ver o almoxarifado inteiro
+        </Link>
         <Link className="botao botao--discreto" href="/recursos">
           Recursos emprestáveis
         </Link>

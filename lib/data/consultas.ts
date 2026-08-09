@@ -22,6 +22,8 @@ import type {
   RecursoStatus,
   LocalComTurmas,
   Anotacao,
+  ItemDoAlmoxarifado,
+  ResumoDoAlmoxarifado,
   UsoDeIa,
   HistoricoDoLocal,
   MaterialDaPendencia,
@@ -342,6 +344,40 @@ export async function buscarPendenciasPorBloco(): Promise<BlocoDaSerie[]> {
 
   if (error) throw descrever('Não foi possível carregar as pendências por bloco', error);
   return (data ?? []) as unknown as BlocoDaSerie[];
+}
+
+// ---------- Almoxarifado ----------
+
+export interface AlmoxarifadoEmTela {
+  itens: ItemDoAlmoxarifado[];
+  resumo: ResumoDoAlmoxarifado;
+}
+
+/**
+ * Tudo que está no almoxarifado, das três origens.
+ *
+ * A leitura é unificada porque o almoxarifado é uma sala só; as tabelas
+ * continuam separadas porque as regras de cada natureza são diferentes.
+ * Ver decisão 15 do ADR.
+ */
+export async function buscarAlmoxarifado(busca?: string): Promise<AlmoxarifadoEmTela> {
+  const supabase = await criarClienteServidor();
+
+  let consulta = supabase.from('vw_almoxarifado').select('*');
+  if (busca?.trim()) consulta = consulta.ilike('nome', `%${busca.trim()}%`);
+
+  const [itens, resumo] = await Promise.all([
+    consulta.order('natureza').order('nome'),
+    supabase.rpc('resumo_do_almoxarifado'),
+  ]);
+
+  if (itens.error) throw descrever('Não foi possível carregar o almoxarifado', itens.error);
+  if (resumo.error) throw descrever('Não foi possível resumir o almoxarifado', resumo.error);
+
+  return {
+    itens: (itens.data ?? []) as ItemDoAlmoxarifado[],
+    resumo: resumo.data as unknown as ResumoDoAlmoxarifado,
+  };
 }
 
 // ---------- Uso da IA ----------

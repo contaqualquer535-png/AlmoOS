@@ -136,6 +136,36 @@ nova.
 
 ---
 
+## 15 — Almoxarifado é uma leitura, não uma tabela
+
+**Problema.** Suprimento, recurso e patrimônio ficam fisicamente na
+mesma sala. O operador abre a porta e vê uma coisa só, mas o sistema
+mostrava três telas.
+
+**Decisão.** `vw_almoxarifado` une as três na leitura. As tabelas
+continuam separadas, e cada natureza continua sendo editada na tela que
+entende as regras dela.
+
+**Por quê não fundir de verdade.** Saldo de café é mantido por trigger,
+extensão tem retirada aberta com responsável, projetor tem número de
+patrimônio e previsão de devolução. Uma tabela só deixaria dois terços
+das colunas nulas em dois terços das linhas — que é exatamente o erro
+que a decisão 04 corrigiu quando `inventario.local_atual` misturava uuid
+com a string 'almoxarifado'.
+
+**A relação é assimétrica, e isso é do domínio.** Todo suprimento e todo
+recurso estão no almoxarifado; nem tudo no almoxarifado é suprimento. A
+view reflete isso: suprimentos e recursos entram inteiros, patrimônio
+entra pelo que estiver lá.
+
+**Reativar em vez de recusar.** `nome` é único nas três tabelas e
+"remover" desativa. Recriar um item removido batia numa restrição sobre
+linha invisível, e a mensagem "já existe" soava como mentira. Agora o
+cadastro reativa o original — o que também é o certo: duas linhas
+"Apagador" dividiriam o saldo em dois.
+
+---
+
 ## 14 — O modelo converte uma vez, na entrada
 
 **Problema.** "Trocar pilha do relógio da sala C-212" contém local, item

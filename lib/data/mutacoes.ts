@@ -469,6 +469,34 @@ export async function salvarLocal(dados: {
     ordem_visita: dados.ordemVisita ?? null,
   };
 
+  // Ambiente removido continua no banco por causa do histórico. Recriar
+  // com o mesmo código reativa o original — o que também é o certo:
+  // duas salas C-212 dividiriam as pendências entre si.
+  if (!dados.id) {
+    const { data: desativado } = await supabase
+      .from('locais')
+      .select('id')
+      .eq('codigo', codigo)
+      .eq('ativo', false)
+      .maybeSingle();
+
+    if (desativado) {
+      const { error } = await supabase
+        .from('locais')
+        .update({ ...linha, ativo: true })
+        .eq('id', desativado.id as string);
+
+      if (error) return { ok: false, mensagem: error.message };
+
+      revalidatePath('/salas');
+      revalidatePath('/hoje');
+      return {
+        ok: true,
+        mensagem: `${codigo} já existia desativado e voltou, com o histórico.`,
+      };
+    }
+  }
+
   const { error } = dados.id
     ? await supabase.from('locais').update(linha).eq('id', dados.id)
     : await supabase.from('locais').insert(linha);
@@ -656,6 +684,31 @@ export async function salvarRecurso(dados: {
     local_guarda_id: dados.localGuardaId || null,
   };
 
+  // Mesmo caso dos suprimentos: o nome é único e "remover" só desativa.
+  if (!dados.id) {
+    const { data: desativado } = await supabase
+      .from('recursos')
+      .select('id')
+      .eq('nome', nome)
+      .eq('ativo', false)
+      .maybeSingle();
+
+    if (desativado) {
+      const { error } = await supabase
+        .from('recursos')
+        .update({ ...linha, ativo: true })
+        .eq('id', desativado.id as string);
+
+      if (error) return { ok: false, mensagem: error.message };
+
+      revalidarRecursos();
+      return {
+        ok: true,
+        mensagem: `"${nome}" já existia desativado e voltou para a lista.`,
+      };
+    }
+  }
+
   const { error } = dados.id
     ? await supabase.from('recursos').update(linha).eq('id', dados.id)
     : await supabase.from('recursos').insert(linha);
@@ -785,6 +838,41 @@ export async function salvarSuprimento(dados: {
     unidade: dados.unidade.trim() || 'un',
     ponto_reposicao: dados.pontoReposicao,
   };
+
+  if (!dados.id) {
+    /**
+     * "Remover" desativa, não apaga — mas o nome continua único no
+     * banco. Sem este passo, recriar um item removido bate numa
+     * restrição de unicidade sobre uma linha invisível, e a mensagem
+     * "já existe" soa como mentira.
+     *
+     * Reativar em vez de criar outro é o comportamento certo: o
+     * histórico de movimentos daquele apagador continua sendo dele, e
+     * duas linhas com o mesmo nome dividiriam o saldo em dois.
+     */
+    const { data: desativado } = await supabase
+      .from('suprimentos')
+      .select('id')
+      .eq('nome', nome)
+      .eq('ativo', false)
+      .maybeSingle();
+
+    if (desativado) {
+      const { error } = await supabase
+        .from('suprimentos')
+        .update({ ...linha, ativo: true })
+        .eq('id', desativado.id as string);
+
+      if (error) return { ok: false, mensagem: error.message };
+
+      revalidatePath('/suprimentos');
+      revalidatePath('/hoje');
+      return {
+        ok: true,
+        mensagem: `"${nome}" já existia desativado e voltou para a lista, com o histórico.`,
+      };
+    }
+  }
 
   const { error } = dados.id
     ? await supabase.from('suprimentos').update(linha).eq('id', dados.id)

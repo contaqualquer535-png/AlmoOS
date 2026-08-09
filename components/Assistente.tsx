@@ -3,6 +3,8 @@
 import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { TextoDoModelo } from '@/components/TextoDoModelo';
+
 interface Parte {
   text?: string;
   functionCall?: { name: string; args: Record<string, never> };
@@ -132,7 +134,9 @@ export function Assistente() {
               className={`fala fala--${turno.role === 'user' ? 'operador' : 'assistente'}`}
             >
               {turno.texto ? (
-                <p className="fala__texto">{turno.texto}</p>
+                <div className="fala__texto">
+                  <TextoDoModelo texto={turno.texto} />
+                </div>
               ) : (
                 <p className="fala__texto fala__texto--discreto">Consultando os dados…</p>
               )}

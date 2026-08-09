@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { registrarUso } from '@/lib/ia/uso';
+
 /**
  * Converte uma anotação livre em trabalho estruturado.
  *
@@ -103,6 +105,13 @@ export async function interpretarAnotacao(
   try {
     const corpo = await resposta.json();
     const bruto = corpo?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
+
+    await registrarUso({
+      contexto: 'interpretacao',
+      modelo: `gemini:${modelo}`,
+      tokensEntrada: corpo?.usageMetadata?.promptTokenCount ?? null,
+      tokensSaida: corpo?.usageMetadata?.candidatesTokenCount ?? null,
+    });
     const lido = JSON.parse(
       bruto.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''),
     ) as Partial<Interpretacao>;

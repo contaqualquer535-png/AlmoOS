@@ -625,6 +625,11 @@ a {
   gap: 0.4375rem;
 }
 
+.rosca__chave--resto {
+  color: var(--tinta-fraca);
+  font-style: italic;
+}
+
 .rosca__ponto {
   width: 0.625rem;
   height: 0.625rem;
@@ -1426,8 +1431,28 @@ a.azulejo:hover {
 
 .fala__texto {
   margin: 0;
-  white-space: pre-wrap;
   line-height: 1.55;
+}
+
+.fala__paragrafo {
+  margin: 0 0 0.5rem;
+}
+
+.fala__paragrafo:last-child {
+  margin-bottom: 0;
+}
+
+.fala__lista {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.125rem;
+}
+
+.fala__lista li {
+  margin-bottom: 0.125rem;
+}
+
+.fala__lista:last-child {
+  margin-bottom: 0;
 }
 
 .fala__texto--discreto {

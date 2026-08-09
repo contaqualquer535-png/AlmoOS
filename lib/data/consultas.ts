@@ -22,6 +22,7 @@ import type {
   RecursoStatus,
   LocalComTurmas,
   Anotacao,
+  UsoDeIa,
   HistoricoDoLocal,
   MaterialDaPendencia,
   MobiliarioDaSala,
@@ -343,6 +344,16 @@ export async function buscarPendenciasPorBloco(): Promise<BlocoDaSerie[]> {
   return (data ?? []) as unknown as BlocoDaSerie[];
 }
 
+// ---------- Uso da IA ----------
+
+export async function buscarUsoDeIa(): Promise<UsoDeIa> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase.rpc('resumo_do_uso_de_ia');
+
+  if (error) throw descrever('Não foi possível carregar o uso da IA', error);
+  return data as unknown as UsoDeIa;
+}
+
 // ---------- Anotações ----------
 
 export async function buscarAnotacoes(incluirArquivadas = false): Promise<Anotacao[]> {
@@ -444,7 +455,7 @@ export async function buscarPendenciasComMateriais(): Promise<PendenciaComMateri
       .select('*')
       .order('bloco')
       .order('ordem_visita', { nullsFirst: false }),
-    supabase.from('materiais_da_pendencia').select('*'),
+    supabase.from('materiais_planejados').select('*').not('pendencia_id', 'is', null),
   ]);
 
   if (pendencias.error) {

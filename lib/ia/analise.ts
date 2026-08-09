@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { registrarUso } from '@/lib/ia/uso';
+
 /**
  * Análise sob demanda, do lado do site.
  *
@@ -121,6 +123,13 @@ export async function analisar(contexto: {
   const corpo = await resposta.json();
   const texto = corpo?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
   const lido = extrairJson(texto);
+
+  await registrarUso({
+    contexto: 'insight',
+    modelo: `gemini:${modelo}`,
+    tokensEntrada: corpo?.usageMetadata?.promptTokenCount ?? null,
+    tokensSaida: corpo?.usageMetadata?.candidatesTokenCount ?? null,
+  });
 
   return {
     padroes: lerLista(lido, 'padroes_identificados'),

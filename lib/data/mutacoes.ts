@@ -530,7 +530,7 @@ export async function marcarMaterial(dados: {
   }
 
   const supabase = await criarClienteServidor();
-  const { error } = await supabase.from('materiais_da_pendencia').insert({
+  const { error } = await supabase.from('materiais_planejados').insert({
     pendencia_id: dados.pendenciaId,
     descricao,
     quantidade: dados.quantidade,
@@ -547,7 +547,7 @@ export async function marcarMaterial(dados: {
 
 export async function removerMaterial(id: string): Promise<Resultado> {
   const supabase = await criarClienteServidor();
-  const { error } = await supabase.from('materiais_da_pendencia').delete().eq('id', id);
+  const { error } = await supabase.from('materiais_planejados').delete().eq('id', id);
 
   if (error) return { ok: false, mensagem: error.message };
 

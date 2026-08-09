@@ -19,12 +19,20 @@ export function Rosca({
   fatias,
   centro,
   legendaCentro,
+  maximoNaLegenda,
 }: {
   fatias: FatiaDaRosca[];
   centro: string;
   legendaCentro: string;
+  /** Acima disto a legenda resume o excedente numa linha só. */
+  maximoNaLegenda?: number;
 }) {
   const total = fatias.reduce((soma, f) => soma + f.valor, 0);
+
+  const comValor = fatias.filter((f) => f.valor > 0);
+  const teto = maximoNaLegenda ?? comValor.length;
+  const visiveis = comValor.slice(0, teto);
+  const ocultas = comValor.slice(teto);
 
   const raio = 52;
   const espessura = 16;
@@ -80,14 +88,20 @@ export function Rosca({
       </svg>
 
       <figcaption className="rosca__legenda">
-        {fatias
-          .filter((f) => f.valor > 0)
-          .map((fatia) => (
-            <span key={fatia.rotulo} className="rosca__chave">
-              <span className="rosca__ponto" style={{ background: fatia.cor }} aria-hidden="true" />
-              {fatia.rotulo} · {fatia.valor}
-            </span>
-          ))}
+        {visiveis.map((fatia) => (
+          <span key={fatia.rotulo} className="rosca__chave">
+            <span className="rosca__ponto" style={{ background: fatia.cor }} aria-hidden="true" />
+            {fatia.rotulo} · {fatia.valor}
+          </span>
+        ))}
+
+        {/* Dezessete salas na legenda viram um muro. O excedente é
+            somado numa linha, e o desenho continua mostrando todas. */}
+        {ocultas.length > 0 ? (
+          <span className="rosca__chave rosca__chave--resto">
+            + {ocultas.length} outras · {ocultas.reduce((s, f) => s + f.valor, 0)}
+          </span>
+        ) : null}
       </figcaption>
     </figure>
   );

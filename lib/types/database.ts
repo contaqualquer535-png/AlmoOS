@@ -263,6 +263,20 @@ export interface Insight {
   erro: string | null;
 }
 
+// ---------- Uso da IA ----------
+
+export interface UsoDeIa {
+  hoje: {
+    chamadas: number;
+    tokens_entrada: number;
+    tokens_saida: number;
+    erros: number;
+  };
+  ultima_hora: number;
+  mes: { chamadas: number; tokens_saida: number };
+  por_contexto: Record<string, number>;
+}
+
 // ---------- Anotações ----------
 
 export interface InterpretacaoDaAnotacao {

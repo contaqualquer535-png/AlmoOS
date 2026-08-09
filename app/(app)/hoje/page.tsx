@@ -14,6 +14,7 @@ import {
   buscarPrevisoes,
   buscarAnotacoes,
   buscarMobiliarioPorSala,
+  buscarResumoDasPlantas,
   agruparPorBloco,
   dataDeHoje,
   semanaDe,
@@ -61,6 +62,7 @@ export default async function PaginaHoje() {
     previsoes,
     anotacoes,
     mobiliario_por_sala,
+    plantas,
   ] = await Promise.all([
     buscarPlanoDoDia(hoje),
     buscarStatusDaRonda(),
@@ -76,6 +78,7 @@ export default async function PaginaHoje() {
     buscarPrevisoes(),
     buscarAnotacoes(),
     buscarMobiliarioPorSala(),
+    buscarResumoDasPlantas(),
   ]);
 
   const rondaPorBloco = agruparPorBloco(ronda);
@@ -88,11 +91,19 @@ export default async function PaginaHoje() {
   const recursosVencidos = recursos.recursos.reduce((s, r) => s + r.retiradas_atrasadas, 0);
   const foraDeOrdem = mobiliario.classes_quebradas + mobiliario.classes_faltando;
 
-  const estadoDasClasses = [
-    { rotulo: 'Em ordem', valor: mobiliario.classes_em_ordem, cor: 'var(--verde)' },
-    { rotulo: 'Quebradas', valor: mobiliario.classes_quebradas, cor: 'var(--tijolo)' },
-    { rotulo: 'Faltando', valor: mobiliario.classes_faltando, cor: 'var(--ambar)' },
-  ];
+  // Tons de verde alternados: a cor aqui separa fatias vizinhas, não
+  // codifica gravidade. Usar a escala de sinalização faria parecer que
+  // uma sala está pior que a outra.
+  const TONS = ['#1b5e43', '#2d7a5a', '#4a9673', '#6bb08e', '#8fc9aa', '#b3ddc6'];
+
+  const classesPorSala = [...plantas]
+    .filter((p) => p.total_classes > 0)
+    .sort((a, b) => b.total_classes - a.total_classes)
+    .map((p, i) => ({
+      rotulo: p.codigo,
+      valor: p.total_classes,
+      cor: TONS[i % TONS.length]!,
+    }));
 
   const cadeiras = painel.contagem_atual['Cadeiras'] ?? 0;
   const mesas = painel.contagem_atual['Mesas'] ?? 0;
@@ -439,17 +450,29 @@ export default async function PaginaHoje() {
         {/* A rosca diz quantas existem e em que estado; a distribuição
             ao lado diz onde estão. Sala com 12 cadeiras e sala com 45
             são realidades distintas que o total esconde. */}
+        {/* Uma fatia por sala, não por estado. Com todas as classes em
+            ordem, a rosca por estado vira um anel verde sólido que não
+            diz nada; por sala ela mostra o tamanho relativo de cada
+            ambiente, que é informação mesmo quando está tudo bem. O
+            estado continua no cartão de pendências e nos indicadores. */}
         <section className="cartao">
           <div className="cartao__cabeca">
-            <h2 className="cartao__titulo">Classes</h2>
+            <h2 className="cartao__titulo">Classes por sala</h2>
             <span className="cartao__contagem">{mobiliario.salas_com_planta} salas</span>
           </div>
           <div className="cartao__corpo cartao__corpo--solto">
             <Rosca
-              fatias={estadoDasClasses}
+              fatias={classesPorSala}
               centro={String(mobiliario.total_classes)}
               legendaCentro="no total"
+              maximoNaLegenda={6}
             />
+            {foraDeOrdem > 0 ? (
+              <p className="linha__nota" style={{ marginTop: '0.5rem' }}>
+                {mobiliario.classes_quebradas} quebradas · {mobiliario.classes_faltando}{' '}
+                faltando
+              </p>
+            ) : null}
           </div>
         </section>
 

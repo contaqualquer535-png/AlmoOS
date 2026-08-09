@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { declaracoesParaGemini } from '@/lib/ia/ferramentas';
+import { registrarUso } from '@/lib/ia/uso';
 
 /**
  * Cliente mínimo do Gemini para o chat com ferramentas.
@@ -99,6 +100,13 @@ export async function conversar(historico: Turno[]): Promise<RespostaDoTurno> {
 
   const corpo = await resposta.json();
   const partes = (corpo?.candidates?.[0]?.content?.parts ?? []) as Parte[];
+
+  await registrarUso({
+    contexto: 'assistente',
+    modelo: `gemini:${modelo}`,
+    tokensEntrada: corpo?.usageMetadata?.promptTokenCount ?? null,
+    tokensSaida: corpo?.usageMetadata?.candidatesTokenCount ?? null,
+  });
 
   return {
     partes,

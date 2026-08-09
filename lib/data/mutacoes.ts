@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { criarClienteServidor } from '@/lib/supabase/server';
+import { analisar } from '@/lib/ia/analise';
 import { dataDeHoje } from '@/lib/data/consultas';
 import type {
   CategoriaSuprimento,
@@ -223,6 +224,74 @@ export async function anotarProgresso(id: string, observacao: string): Promise<R
 
   revalidarTrabalho();
   return { ok: true };
+}
+
+// ---------- Análise sob demanda ----------
+
+/**
+ * Roda a análise agora e grava o resultado.
+ *
+ * Grava mesmo quando o modelo falha, com o motivo em `insights_ia.erro`.
+ * A alternativa — não gravar nada — deixaria a tela mostrando a leitura
+ * de ontem como se fosse de agora, que é pior do que dizer que falhou.
+ */
+export async function gerarInsightAgora(): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+
+  const [contexto, previsoes, painel] = await Promise.all([
+    supabase.rpc('montar_contexto_para_insights'),
+    supabase.rpc('montar_previsoes'),
+    supabase.rpc('montar_painel', { p_dias_de_historico: 90 }),
+  ]);
+
+  if (contexto.error) return { ok: false, mensagem: contexto.error.message };
+
+  const bruto = contexto.data as unknown as {
+    gerado_para: string;
+    pontos_atencao: unknown[];
+    dados: unknown;
+  };
+
+  let padroes: string[] = [];
+  let previsoesQualitativas: string[] = [];
+  let modelo = 'nenhum';
+  let tokens: number | null = null;
+  let erro: string | null = null;
+
+  try {
+    const leitura = await analisar({
+      agregados: painel.data ?? bruto.dados,
+      previsoes: previsoes.data ?? {},
+      atencao: bruto.pontos_atencao,
+    });
+    padroes = leitura.padroes;
+    previsoesQualitativas = leitura.previsoes;
+    modelo = leitura.modelo;
+    tokens = leitura.tokensSaida;
+  } catch (falha) {
+    erro = falha instanceof Error ? falha.message : 'Falha ao falar com o modelo.';
+  }
+
+  const { error } = await supabase.from('insights_ia').insert({
+    resumo: {
+      gerado_para: bruto.gerado_para,
+      pontos_atencao: bruto.pontos_atencao,
+      padroes_identificados: padroes,
+      previsoes_qualitativas: previsoesQualitativas,
+    },
+    modelo,
+    tokens_saida: tokens,
+    erro,
+  });
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath('/hoje');
+
+  // ok:true com mensagem: o registro foi gravado, mas a leitura não veio.
+  // Distinguir isso de falha total importa — a tela mostra os pontos
+  // determinísticos de qualquer jeito.
+  return erro ? { ok: true, mensagem: erro } : { ok: true };
 }
 
 // ---------- Recursos emprestáveis ----------

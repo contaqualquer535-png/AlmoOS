@@ -85,15 +85,21 @@ as $$
       select jsonb_agg(x order by x.semana)
         from (
           select
-            s.semana::date,
+            s.semana,
             (select count(*) from public.pendencias p
               where p.aberta_em >= s.semana and p.aberta_em < s.semana + 7) as abertas,
             (select count(*) from public.pendencias p
               where p.fechada_em >= s.semana and p.fechada_em < s.semana + 7) as fechadas
-          from generate_series(
-                 date_trunc('week', current_date) - interval '7 weeks',
-                 date_trunc('week', current_date),
-                 interval '1 week') as s(semana)
+          from (
+            -- O cast para date acontece aqui, e não lá embaixo, porque
+            -- generate_series devolve timestamptz e "timestamptz + 7"
+            -- não existe. Com date, o + 7 é soma de dias.
+            select gs::date as semana
+              from generate_series(
+                     date_trunc('week', current_date) - interval '7 weeks',
+                     date_trunc('week', current_date),
+                     interval '1 week') as gs
+          ) s
         ) x
     ), '[]'::jsonb),
 

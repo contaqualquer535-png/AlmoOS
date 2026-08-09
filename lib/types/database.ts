@@ -255,10 +255,48 @@ export interface Insight {
     gerado_para: string;
     pontos_atencao: PontoDeAtencao[];
     padroes_identificados: string[];
+    /** Ausente nos insights gravados antes da análise sob demanda. */
+    previsoes_qualitativas?: string[];
   };
   modelo: string;
   tokens_saida: number | null;
   erro: string | null;
+}
+
+// ---------- Previsões calculadas ----------
+
+export interface Previsoes {
+  gerado_em: string;
+  reincidencia: Array<{
+    local_codigo: string;
+    item: string;
+    ocorrencias: number;
+    intervalo_medio_dias: number;
+    previsto: string;
+    faltam: number;
+  }>;
+  esgotamento: Array<{
+    nome: string;
+    quantidade_atual: number;
+    unidade: string;
+    dias_restantes: number;
+    previsao_esgotamento: string;
+    recente: number;
+    anterior: number;
+    variacao_percentual: number | null;
+  }>;
+  consumo_acelerando: Array<{
+    nome: string;
+    recente: number;
+    anterior: number;
+    variacao: number;
+  }>;
+  salas_criticas: Array<{
+    local_codigo: string;
+    pendencias_abertas: number;
+    dias_da_mais_antiga: number;
+    tem_chamado: boolean;
+  }>;
 }
 
 export const ROTULO_PONTO: Record<TipoPontoDeAtencao, string> = {

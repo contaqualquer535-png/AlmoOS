@@ -11,6 +11,7 @@ import {
   buscarContagemDeMobiliario,
   buscarRecursos,
   buscarPainel,
+  buscarPrevisoes,
   agruparPorBloco,
   dataDeHoje,
   semanaDe,
@@ -23,6 +24,7 @@ import { BarrasCompactas } from '@/components/BarrasCompactas';
 import { BarrasSemanais } from '@/components/BarrasSemanais';
 import { PontosDeAtencao } from '@/components/PontosDeAtencao';
 import { Rosca } from '@/components/Rosca';
+import { CartaoPrevisoes } from '@/components/CartaoPrevisoes';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +53,7 @@ export default async function PaginaHoje() {
     mobiliario,
     recursos,
     painel,
+    previsoes,
   ] = await Promise.all([
     buscarPlanoDoDia(hoje),
     buscarStatusDaRonda(),
@@ -63,6 +66,7 @@ export default async function PaginaHoje() {
     buscarContagemDeMobiliario(),
     buscarRecursos(),
     buscarPainel(90),
+    buscarPrevisoes(),
   ]);
 
   const rondaPorBloco = agruparPorBloco(ronda);
@@ -247,6 +251,16 @@ export default async function PaginaHoje() {
           <div className="cartao__corpo">
             <PontosDeAtencao pontos={pontos} insight={insight} />
           </div>
+        </section>
+
+        <section className="cartao">
+          <div className="cartao__cabeca">
+            <h2 className="cartao__titulo">Previsões</h2>
+            <span className="cartao__contagem">
+              {previsoes.reincidencia.length + previsoes.esgotamento.length}
+            </span>
+          </div>
+          <CartaoPrevisoes previsoes={previsoes} insight={insight} />
         </section>
 
         {/* Agenda única: separadas, cada origem exige lembrar de

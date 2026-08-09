@@ -136,6 +136,34 @@ nova.
 
 ---
 
+## 13 — Previsão aritmética antes de previsão de modelo
+
+**Problema.** "A IA precisa prever coisas." Mas a maior parte do que se
+quer prever aqui é conta: quando o café acaba é saldo dividido pelo
+consumo médio; quando o projetor da K-302 quebra de novo é o intervalo
+médio entre as ocorrências anteriores.
+
+**Decisão.** `montar_previsoes()` calcula reincidência, esgotamento,
+aceleração de consumo e salas acumulando. Nenhuma passa por modelo. O
+modelo recebe essas previsões prontas e é instruído a **não repeti-las**,
+produzindo só o que elas não capturam.
+
+**Por quê.** Três razões, na ordem: não custa token, não alucina número,
+e dá o mesmo resultado toda vez. Um número que vai virar argumento em
+chamado ao SEAMB não pode variar conforme a temperatura do modelo.
+
+**A tela separa as duas origens.** "O café acaba dia 14" e "parece haver
+relação entre X e Y" têm graus de confiança muito diferentes, e a
+separação é epistêmica, não organizacional — juntas numa lista só, a
+segunda herdaria a autoridade da primeira. É a mesma regra da decisão 09.
+
+**Análise sob demanda e agendada coexistem.** O cron garante leitura
+recente ao chegar; o botão serve para depois de uma ronda pesada. As
+duas chamam o mesmo prompt, que mora em `lib/ia/analise.ts` — duas
+redações da mesma instrução divergem em um mês e ninguém percebe.
+
+---
+
 ## 12 — Recurso é a terceira forma de "coisa"
 
 **Problema.** Extensão elétrica não cabia em nada. `suprimentos` tem

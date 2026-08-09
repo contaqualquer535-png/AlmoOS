@@ -309,6 +309,20 @@ a {
   padding: 0 0.25rem;
 }
 
+/* Divisor entre grupos dentro de um cartão, sem virar outra seção. */
+.rotulo-de-grupo {
+  font-family: var(--fonte-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  margin: 0.625rem 0 0.125rem;
+}
+
+.rotulo-de-grupo:first-child {
+  margin-top: 0;
+}
+
 /* ---------- Barras compactas ---------- */
 
 .barrinhas {

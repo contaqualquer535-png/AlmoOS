@@ -10,6 +10,7 @@ import type {
   Insight,
   Painel,
   PontoDeAtencao,
+  Previsoes,
   Relatorio,
   RelatorioSalvo,
   StatusVerificacao,
@@ -247,6 +248,15 @@ export async function buscarPontosDeAtencao(): Promise<PontoDeAtencao[]> {
   if (error) throw descrever('Não foi possível montar os pontos de atenção', error);
   return ((data as unknown as { pontos_atencao?: PontoDeAtencao[] })?.pontos_atencao ??
     []) as PontoDeAtencao[];
+}
+
+/** Previsões aritméticas. Não dependem de modelo nem de chave. */
+export async function buscarPrevisoes(): Promise<Previsoes> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase.rpc('montar_previsoes');
+
+  if (error) throw descrever('Não foi possível montar as previsões', error);
+  return data as unknown as Previsoes;
 }
 
 /** Última análise gravada pela Edge Function. Null antes do primeiro job. */

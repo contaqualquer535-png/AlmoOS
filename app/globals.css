@@ -1478,6 +1478,290 @@ a.azulejo:hover {
   flex: 1;
 }
 
+/* ---------- Anotações ---------- */
+
+.nota-nova {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.875rem;
+}
+
+.nota-nova__campo {
+  flex: 1;
+  resize: vertical;
+  min-height: 2.75rem;
+  margin: 0;
+}
+
+.notas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Papel amarelo, a única cor do sistema que não é sinalização. Anotação
+   não tem estado, então nada aqui codifica gravidade. */
+.nota {
+  background: var(--ambar-claro);
+  border: 1px solid var(--regua);
+  border-radius: var(--raio);
+  padding: 0.5rem 0.625rem;
+}
+
+.nota--fixada {
+  border-color: var(--ambar);
+  border-left-width: 3px;
+}
+
+.nota__texto {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.nota__rodape {
+  display: flex;
+  gap: 0.375rem;
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  color: var(--tinta-fraca);
+  margin: 0.25rem 0 0;
+}
+
+.nota__acoes {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  margin-top: 0.375rem;
+}
+
+/* ---------- Distribuição de mobiliário ---------- */
+
+.distribuicao {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.distribuicao__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.125rem 0;
+}
+
+.distribuicao__codigo {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  width: 4.25rem;
+  flex-shrink: 0;
+  color: var(--tinta-media);
+  text-decoration: none;
+}
+
+.distribuicao__codigo:hover {
+  color: var(--verde);
+  text-decoration: underline;
+}
+
+.distribuicao__trilho {
+  flex: 1;
+  min-width: 0;
+  height: 0.625rem;
+  display: flex;
+  background: var(--papel);
+  border: 1px solid var(--regua);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.distribuicao__mesas {
+  background: var(--tinta-media);
+}
+
+.distribuicao__cadeiras {
+  background: var(--verde);
+}
+
+.distribuicao__valor {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  width: 2rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.distribuicao__legenda {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.6875rem;
+  color: var(--tinta-fraca);
+  margin-top: 0.375rem;
+}
+
+.distribuicao__chave--mesas::before {
+  background: var(--tinta-media);
+}
+
+.distribuicao__chave--cadeiras::before {
+  background: var(--verde);
+}
+
+/* ---------- Cadastro de ambiente ---------- */
+
+.cadastro-ambiente {
+  border: 1px solid var(--regua-forte);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+  padding: 0.875rem;
+}
+
+.cadastro-ambiente__ronda {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--tinta-media);
+  margin-top: 0.25rem;
+}
+
+/* ---------- Linha do tempo de um ambiente ---------- */
+
+.tempo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tempo__dia {
+  display: flex;
+  gap: 0.875rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--regua);
+}
+
+.tempo__dia:last-child {
+  border-bottom: none;
+}
+
+.tempo__data {
+  font-family: var(--fonte-mono);
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  width: 4rem;
+  flex-shrink: 0;
+  margin: 0.1875rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tempo__eventos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.evento {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.1875rem 0;
+}
+
+/* A cor identifica a natureza do evento, não a gravidade: patrimônio e
+   pendência são coisas diferentes mesmo quando as duas são rotina. */
+.evento__tipo {
+  font-family: var(--fonte-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: 5rem;
+  flex-shrink: 0;
+  color: var(--tinta-fraca);
+  border-left: 2px solid var(--regua-forte);
+  padding-left: 0.375rem;
+}
+
+.evento--ronda .evento__tipo { border-left-color: var(--verde); }
+.evento--pendencia .evento__tipo { border-left-color: var(--ambar); }
+.evento--chamado .evento__tipo { border-left-color: var(--tijolo); }
+.evento--tarefa .evento__tipo { border-left-color: var(--tinta-media); }
+.evento--inventario .evento__tipo { border-left-color: var(--regua-forte); }
+.evento--recurso .evento__tipo { border-left-color: var(--verde); }
+.evento--classe .evento__tipo { border-left-color: var(--ambar); }
+
+.evento__corpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.evento__titulo {
+  display: block;
+  font-size: 0.875rem;
+}
+
+.evento__subtipo {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  color: var(--tinta-fraca);
+  margin-left: 0.5rem;
+}
+
+/* ---------- Série de contagem ---------- */
+
+.serie {
+  margin: 0 0 1.25rem;
+}
+
+.serie__cabeca {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.serie__rotulo {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.serie__atual {
+  font-family: var(--fonte-mono);
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.serie__variacao {
+  font-size: 0.75rem;
+  color: var(--tinta-fraca);
+  margin-left: auto;
+}
+
+.serie__variacao--menos {
+  color: var(--tijolo);
+  font-weight: 600;
+}
+
+.serie__tela {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.serie__eixo {
+  font-family: var(--fonte-mono);
+  font-size: 8px;
+  fill: var(--tinta-fraca);
+}
+
 /* ---------- Materiais de uma pendência ---------- */
 
 .materiais {

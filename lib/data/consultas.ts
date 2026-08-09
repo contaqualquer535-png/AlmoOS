@@ -21,7 +21,10 @@ import type {
   ItemInventario,
   RecursoStatus,
   LocalComTurmas,
+  Anotacao,
+  HistoricoDoLocal,
   MaterialDaPendencia,
+  MobiliarioDaSala,
   Roteiro,
   MovimentacaoInventario,
   PendenciaAberta,
@@ -338,6 +341,57 @@ export async function buscarPendenciasPorBloco(): Promise<BlocoDaSerie[]> {
 
   if (error) throw descrever('Não foi possível carregar as pendências por bloco', error);
   return (data ?? []) as unknown as BlocoDaSerie[];
+}
+
+// ---------- Anotações ----------
+
+export async function buscarAnotacoes(incluirArquivadas = false): Promise<Anotacao[]> {
+  const supabase = await criarClienteServidor();
+
+  let consulta = supabase
+    .from('anotacoes')
+    .select('*')
+    // Fixadas primeiro: sem hierarquia, anotação vira lista infinita
+    // onde o que importa afunda.
+    .order('fixada', { ascending: false })
+    .order('criado_em', { ascending: false })
+    .limit(200);
+
+  if (!incluirArquivadas) consulta = consulta.is('arquivada_em', null);
+
+  const { data, error } = await consulta;
+  if (error) throw descrever('Não foi possível carregar as anotações', error);
+  return (data ?? []) as Anotacao[];
+}
+
+// ---------- Mobiliário por sala ----------
+
+export async function buscarMobiliarioPorSala(): Promise<MobiliarioDaSala[]> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase
+    .from('vw_mobiliario_por_sala')
+    .select('*')
+    .order('bloco')
+    .order('ordem_visita', { nullsFirst: false });
+
+  if (error) throw descrever('Não foi possível carregar o mobiliário', error);
+  return (data ?? []) as MobiliarioDaSala[];
+}
+
+// ---------- Histórico de um ambiente ----------
+
+export async function buscarHistoricoDoLocal(
+  codigo: string,
+  dias = 180,
+): Promise<HistoricoDoLocal> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase.rpc('montar_historico_do_local', {
+    p_codigo: codigo,
+    p_dias: dias,
+  });
+
+  if (error) throw descrever('Não foi possível carregar o histórico', error);
+  return data as unknown as HistoricoDoLocal;
 }
 
 // ---------- Roteiro de reparos ----------

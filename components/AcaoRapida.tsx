@@ -4,21 +4,28 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
+  anotar,
   criarChamado,
   criarTarefa,
   lancarMovimentoDeSuprimento,
   retirarRecurso,
+  salvarRecurso,
+  salvarSuprimento,
 } from '@/lib/data/mutacoes';
 import type { OpcoesDeAcaoRapida } from '@/lib/data/consultas';
 import type { PrioridadeChamado } from '@/lib/types/database';
 
-type Aba = 'tarefa' | 'chamado' | 'consumo' | 'retirada';
+type Aba = 'nota' | 'tarefa' | 'chamado' | 'consumo' | 'retirada' | 'novo';
 
+// Nota vem primeiro: é o registro mais frequente e o que menos tolera
+// atrito. Se anotar custar dois cliques a mais que o papel, vira papel.
 const ABAS: Array<{ chave: Aba; rotulo: string }> = [
+  { chave: 'nota', rotulo: 'Nota' },
   { chave: 'tarefa', rotulo: 'Tarefa' },
   { chave: 'chamado', rotulo: 'Chamado' },
   { chave: 'consumo', rotulo: 'Consumo' },
   { chave: 'retirada', rotulo: 'Retirada' },
+  { chave: 'novo', rotulo: 'Cadastrar' },
 ];
 
 /**
@@ -34,7 +41,8 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
   const [, iniciarTransicao] = useTransition();
 
   const [aberto, setAberto] = useState(false);
-  const [aba, setAba] = useState<Aba>('tarefa');
+  const [aba, setAba] = useState<Aba>('nota');
+  const [tipoNovo, setTipoNovo] = useState<'suprimento' | 'recurso'>('suprimento');
   const [erro, setErro] = useState<string | null>(null);
   const [feito, setFeito] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -88,7 +96,28 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
     let resultado: { ok: boolean; mensagem?: string };
     let confirmacao = '';
 
-    if (aba === 'tarefa') {
+    if (aba === 'nota') {
+      resultado = await anotar({ texto: titulo, localId: localId || undefined });
+      confirmacao = 'Anotado.';
+    } else if (aba === 'novo') {
+      resultado =
+        tipoNovo === 'suprimento'
+          ? await salvarSuprimento({
+              nome: titulo,
+              categoria: 'copa',
+              unidade: 'un',
+              // Zero significa "sem alerta". O ponto de reposição real
+              // se define na tela de Suprimentos, com o histórico à
+              // vista — chutar aqui geraria alarme falso.
+              pontoReposicao: 0,
+            })
+          : await salvarRecurso({
+              nome: titulo,
+              quantidadeTotal: Math.max(0, Math.trunc(Number(quantidade) || 0)),
+              minimoDesejado: 0,
+            });
+      confirmacao = tipoNovo === 'suprimento' ? 'Suprimento criado.' : 'Recurso criado.';
+    } else if (aba === 'tarefa') {
       resultado = await criarTarefa({
         titulo,
         localId: localId || undefined,
@@ -135,7 +164,7 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
   }
 
   const podeEnviar =
-    aba === 'tarefa' || aba === 'chamado'
+    aba === 'tarefa' || aba === 'chamado' || aba === 'nota' || aba === 'novo'
       ? titulo.trim().length > 0
       : itemId !== '' && Number(quantidade) > 0;
 
@@ -193,7 +222,74 @@ export function AcaoRapida({ opcoes }: { opcoes: OpcoesDeAcaoRapida }) {
           if (podeEnviar) void enviar();
         }}
       >
-        {aba === 'tarefa' || aba === 'chamado' ? (
+        {aba === 'nota' ? (
+          <>
+            <textarea
+              className="campo__entrada"
+              placeholder="Anote qualquer coisa"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && titulo.trim()) {
+                  e.preventDefault();
+                  void enviar();
+                }
+              }}
+              rows={3}
+              style={{ resize: 'vertical' }}
+            />
+            <select
+              className="campo__entrada"
+              value={localId}
+              onChange={(e) => setLocalId(e.target.value)}
+              aria-label="Local"
+            >
+              <option value="">Sem local</option>
+              {opcoes.ambientes.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.codigo}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : aba === 'novo' ? (
+          <>
+            <div className="acao-rapida__linha">
+              <select
+                className="campo__entrada"
+                value={tipoNovo}
+                onChange={(e) => setTipoNovo(e.target.value as 'suprimento' | 'recurso')}
+                aria-label="O que cadastrar"
+              >
+                <option value="suprimento">Suprimento (consumível)</option>
+                <option value="recurso">Recurso (emprestável)</option>
+              </select>
+              {tipoNovo === 'recurso' ? (
+                <input
+                  className="campo__entrada"
+                  inputMode="numeric"
+                  placeholder="Quantas"
+                  value={quantidade}
+                  onChange={(e) => setQuantidade(e.target.value)}
+                  aria-label="Quantidade total"
+                />
+              ) : null}
+            </div>
+            <input
+              ref={primeiroCampo as React.RefObject<HTMLInputElement>}
+              className="campo__entrada"
+              type="text"
+              placeholder={tipoNovo === 'suprimento' ? 'Nome do suprimento' : 'Nome do recurso'}
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+            />
+            <p className="linha__nota">
+              {tipoNovo === 'suprimento'
+                ? 'Categoria e ponto de reposição você ajusta em Suprimentos, com o histórico à vista.'
+                : 'O mínimo desejado você ajusta em Recursos.'}
+            </p>
+          </>
+        ) : aba === 'tarefa' || aba === 'chamado' ? (
           <>
             <input
               ref={primeiroCampo as React.RefObject<HTMLInputElement>}

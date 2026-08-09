@@ -14,6 +14,7 @@ import type {
   StatusTarefa,
   StatusVerificacao,
   TipoElemento,
+  TipoLocal,
   TipoMovimentacaoInventario,
   TipoRelatorio,
 } from '@/lib/types/database';
@@ -223,6 +224,166 @@ export async function anotarProgresso(id: string, observacao: string): Promise<R
   if (error) return { ok: false, mensagem: error.message };
 
   revalidarTrabalho();
+  return { ok: true };
+}
+
+// ---------- Anotações ----------
+
+function revalidarAnotacoes(): void {
+  revalidatePath('/hoje');
+  revalidatePath('/notas');
+}
+
+export async function anotar(dados: {
+  texto: string;
+  localId?: string;
+}): Promise<Resultado> {
+  const texto = dados.texto.trim();
+  if (!texto) return { ok: false, mensagem: 'A anotação está vazia.' };
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('anotacoes').insert({
+    texto,
+    local_id: dados.localId || null,
+  });
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidarAnotacoes();
+  return { ok: true };
+}
+
+export async function editarAnotacao(id: string, texto: string): Promise<Resultado> {
+  const limpo = texto.trim();
+  if (!limpo) return { ok: false, mensagem: 'A anotação está vazia.' };
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('anotacoes').update({ texto: limpo }).eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidarAnotacoes();
+  return { ok: true };
+}
+
+export async function fixarAnotacao(id: string, fixada: boolean): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('anotacoes').update({ fixada }).eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidarAnotacoes();
+  return { ok: true };
+}
+
+/**
+ * Arquiva em vez de apagar.
+ *
+ * Anotação é rascunho, e rascunho às vezes se mostra importante depois.
+ * O arquivo custa nada e evita a decisão irreversível no calor de uma
+ * limpeza de lista.
+ */
+export async function arquivarAnotacao(id: string): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase
+    .from('anotacoes')
+    .update({ arquivada_em: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidarAnotacoes();
+  return { ok: true };
+}
+
+export async function apagarAnotacao(id: string): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('anotacoes').delete().eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidarAnotacoes();
+  return { ok: true };
+}
+
+// ---------- Ambientes ----------
+
+const TIPOS_DE_LOCAL: readonly TipoLocal[] = [
+  'sala',
+  'banheiro',
+  'apoio',
+  'teatro',
+  'almoxarifado',
+  'externo',
+];
+
+export async function salvarLocal(dados: {
+  id?: string;
+  codigo: string;
+  nome?: string;
+  bloco?: string;
+  tipo: TipoLocal;
+  rondaPadrao: boolean;
+  ordemVisita?: number | null;
+}): Promise<Resultado> {
+  const codigo = dados.codigo.trim().toUpperCase();
+  if (!codigo) return { ok: false, mensagem: 'O ambiente precisa de um código.' };
+  if (!TIPOS_DE_LOCAL.includes(dados.tipo)) {
+    return { ok: false, mensagem: 'Tipo de ambiente inválido.' };
+  }
+
+  const supabase = await criarClienteServidor();
+  const linha = {
+    codigo,
+    nome: dados.nome?.trim() || null,
+    bloco: dados.bloco?.trim() || null,
+    tipo: dados.tipo,
+    ronda_padrao: dados.rondaPadrao,
+    ordem_visita: dados.ordemVisita ?? null,
+  };
+
+  const { error } = dados.id
+    ? await supabase.from('locais').update(linha).eq('id', dados.id)
+    : await supabase.from('locais').insert(linha);
+
+  if (error) {
+    if (error.code === '23505') {
+      return { ok: false, mensagem: `Já existe um ambiente com o código ${codigo}.` };
+    }
+    return { ok: false, mensagem: error.message };
+  }
+
+  revalidatePath('/salas');
+  revalidatePath('/hoje');
+  return { ok: true };
+}
+
+/**
+ * Desativa em vez de apagar.
+ *
+ * `locais` é referenciada por verificações, pendências, chamados,
+ * inventário e alocações, com `on delete restrict` na maioria. Apagar
+ * uma sala com histórico seria recusado pelo banco — e, se não fosse,
+ * levaria o histórico junto. Desativar tira da lista e preserva tudo.
+ */
+export async function desativarLocal(id: string): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('locais').update({ ativo: false }).eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath('/salas');
+  revalidatePath('/hoje');
+  return { ok: true };
+}
+
+export async function reativarLocal(id: string): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('locais').update({ ativo: true }).eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath('/salas');
   return { ok: true };
 }
 

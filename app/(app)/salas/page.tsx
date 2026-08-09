@@ -8,6 +8,7 @@ import {
   dataDeHoje,
 } from '@/lib/data/consultas';
 import { dataPorExtenso, plural } from '@/lib/formato';
+import { CadastroDeAmbiente } from '@/components/CadastroDeAmbiente';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +74,21 @@ export default async function PaginaSalas() {
         </div>
       </div>
 
+      <div style={{ marginTop: '1.25rem' }}>
+        <CadastroDeAmbiente
+          ambientes={salas.map((s) => ({
+            id: s.id,
+            codigo: s.codigo,
+            nome: s.nome,
+            bloco: s.bloco,
+            tipo: s.tipo,
+            ronda_padrao: s.ronda_padrao,
+            ordem_visita: s.ordem_visita,
+          }))}
+          blocos={[...new Set(salas.map((s) => s.bloco).filter((b): b is string => Boolean(b)))]}
+        />
+      </div>
+
       {porBloco.map(([bloco, doBloco]) => (
         <section className="secao" key={bloco}>
           <div className="secao__cabeca">
@@ -88,7 +104,11 @@ export default async function PaginaSalas() {
 
               return (
                 <li className="linha linha--empilha" key={sala.id}>
-                  <span className="linha__codigo">{sala.codigo}</span>
+                  <span className="linha__codigo">
+                    <Link href={`/salas/${encodeURIComponent(sala.codigo)}`}>
+                      {sala.codigo}
+                    </Link>
+                  </span>
 
                   <span className="linha__principal">
                     <span className="linha__titulo">

@@ -36,7 +36,9 @@ app/
   (app)/hoje         resumo do dia
   (app)/ronda        lançamento do checklist, sala a sala
   (app)/inventario   patrimônio, empréstimo e histórico de movimentação
-  (app)/salas        todos os ambientes, turma vigente, planta e pendências
+  (app)/notas        anotações livres, sem estrutura
+  (app)/salas        todos os ambientes; cadastro e edição
+  (app)/salas/:cod   linha do tempo de um ambiente e contagem no tempo
   (app)/recursos     extensão, cabo, controle: quantos há e com quem
   (app)/suprimentos  consumo e reposição
   (app)/assistente   chat com ferramentas, escrita sob confirmação

@@ -263,6 +263,66 @@ export interface Insight {
   erro: string | null;
 }
 
+// ---------- Anotações ----------
+
+export interface Anotacao {
+  id: string;
+  texto: string;
+  local_id: string | null;
+  fixada: boolean;
+  arquivada_em: string | null;
+  criado_em: string;
+}
+
+// ---------- Mobiliário por sala ----------
+
+export interface MobiliarioDaSala {
+  local_id: string;
+  codigo: string;
+  bloco: string | null;
+  ordem_visita: number | null;
+  mesas: number;
+  cadeiras: number;
+  contado_em: string | null;
+  classes_na_planta: number;
+}
+
+// ---------- Histórico de um ambiente ----------
+
+export type TipoDeEvento =
+  | 'ronda'
+  | 'pendencia'
+  | 'chamado'
+  | 'tarefa'
+  | 'inventario'
+  | 'recurso'
+  | 'classe';
+
+export interface EventoDoLocal {
+  quando: string;
+  tipo: TipoDeEvento;
+  subtipo: string;
+  titulo: string;
+  detalhe: string | null;
+}
+
+export interface HistoricoDoLocal {
+  local: { id: string; codigo: string; nome: string | null; bloco: string | null } | null;
+  eventos: EventoDoLocal[];
+  contagens: Record<string, Array<{ data: string; quantidade: number }>>;
+  janela_dias: number;
+}
+
+export const ROTULO_EVENTO: Record<TipoDeEvento, string> = {
+  ronda: 'Ronda',
+  pendencia: 'Pendência',
+  chamado: 'Chamado',
+  tarefa: 'Tarefa',
+  inventario: 'Patrimônio',
+  recurso: 'Recurso',
+  classe: 'Classe',
+};
+
 // ---------- Roteiro de reparos ----------
 
 export interface MaterialDoRoteiro {

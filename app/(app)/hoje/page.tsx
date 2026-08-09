@@ -12,6 +12,8 @@ import {
   buscarRecursos,
   buscarPainel,
   buscarPrevisoes,
+  buscarAnotacoes,
+  buscarMobiliarioPorSala,
   agruparPorBloco,
   dataDeHoje,
   semanaDe,
@@ -25,6 +27,8 @@ import { BarrasSemanais } from '@/components/BarrasSemanais';
 import { PontosDeAtencao } from '@/components/PontosDeAtencao';
 import { Rosca } from '@/components/Rosca';
 import { CartaoPrevisoes } from '@/components/CartaoPrevisoes';
+import { Anotacoes } from '@/components/Anotacoes';
+import { DistribuicaoDeMobiliario } from '@/components/DistribuicaoDeMobiliario';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +58,8 @@ export default async function PaginaHoje() {
     recursos,
     painel,
     previsoes,
+    anotacoes,
+    mobiliario_por_sala,
   ] = await Promise.all([
     buscarPlanoDoDia(hoje),
     buscarStatusDaRonda(),
@@ -67,6 +73,8 @@ export default async function PaginaHoje() {
     buscarRecursos(),
     buscarPainel(90),
     buscarPrevisoes(),
+    buscarAnotacoes(),
+    buscarMobiliarioPorSala(),
   ]);
 
   const rondaPorBloco = agruparPorBloco(ronda);
@@ -419,6 +427,9 @@ export default async function PaginaHoje() {
           </div>
         </section>
 
+        {/* A rosca diz quantas existem e em que estado; a distribuição
+            ao lado diz onde estão. Sala com 12 cadeiras e sala com 45
+            são realidades distintas que o total esconde. */}
         <section className="cartao">
           <div className="cartao__cabeca">
             <h2 className="cartao__titulo">Classes</h2>
@@ -430,6 +441,28 @@ export default async function PaginaHoje() {
               centro={String(mobiliario.total_classes)}
               legendaCentro="no total"
             />
+          </div>
+        </section>
+
+        <section className="cartao">
+          <div className="cartao__cabeca">
+            <h2 className="cartao__titulo">Mobiliário por sala</h2>
+            <span className="cartao__contagem">
+              {mesas + cadeiras} un
+            </span>
+          </div>
+          <div className="cartao__corpo cartao__corpo--alto">
+            <DistribuicaoDeMobiliario salas={mobiliario_por_sala} />
+          </div>
+        </section>
+
+        <section className="cartao mosaico__largo">
+          <div className="cartao__cabeca">
+            <h2 className="cartao__titulo">Anotações</h2>
+            <span className="cartao__contagem">{anotacoes.length}</span>
+          </div>
+          <div className="cartao__corpo cartao__corpo--alto">
+            <Anotacoes anotacoes={anotacoes} locais={recursos.locais} compacto />
           </div>
         </section>
 

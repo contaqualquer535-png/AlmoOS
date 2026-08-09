@@ -236,17 +236,29 @@ SendGrid e o genérico — o segredo pode ir no header `x-email-segredo` ou
 na querystring, porque nem todo serviço de entrada deixa configurar
 header.
 
-Você precisa de um serviço que receba e-mail e faça esse POST. Duas
-opções sem custo:
+**O caminho recomendado é o Google Apps Script**, em
+`integracao-gmail/`. Ele lê a caixa e faz o POST direto, sem serviço
+externo de e-mail e sem domínio próprio.
+
+Isso importa no caso da UCS: o Workspace bloqueia aplicativos OAuth de
+terceiros, mas Apps Script não é terceiro — roda dentro da sua conta,
+com a sua autorização. Nada sai da conta institucional para um serviço
+de e-mail de fora.
+
+Ele também traz uma função `gerarPlanilhaDeChamados`, que varre 180 dias
+e monta a planilha no formato da aba Importar — o caminho mais curto
+para a carga inicial.
+
+**Alternativa**, se o Apps Script estiver bloqueado por política: um
+serviço de entrada de e-mail recebendo um encaminhamento.
 
 | Serviço | Precisa de domínio? |
 |---|---|
 | Postmark Inbound | não — dá um endereço `@inbound.postmarkapp.com` |
 | Cloudflare Email Routing + Email Worker | sim, um domínio no Cloudflare |
 
-Depois, no Gmail da UCS: **Configurações → Filtros → Criar filtro**, com
-remetente do SERVi, ação *Encaminhar para* o endereço do serviço. O
-Gmail exige confirmar o endereço de destino uma vez.
+Nesse caso, no Gmail: **Configurações → Filtros → Criar filtro**, com
+remetente do SERVi, ação *Encaminhar para* o endereço do serviço.
 
 **Idempotência.** A mensagem é gravada com o `Message-ID` do e-mail,
 que é único. Reencaminhar a mesma mensagem não duplica nada — e a tela

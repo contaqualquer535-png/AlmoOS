@@ -3,10 +3,13 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
+import Link from 'next/link';
+
 import {
   anotar,
   apagarAnotacao,
   arquivarAnotacao,
+  converterAnotacao,
   editarAnotacao,
   fixarAnotacao,
 } from '@/lib/data/mutacoes';
@@ -154,9 +157,38 @@ export function Anotacoes({
               ) : (
                 <>
                   <p className="nota__texto">{nota.texto}</p>
+
+                  {/* Procedência declarada. O texto acima é seu; o que
+                      vem abaixo foi deduzido por um modelo, e quem lê
+                      daqui a um mês precisa saber a diferença. */}
+                  {nota.interpretacao ? (
+                    <p className="nota__interpretacao">
+                      <span className="nota__marca">IA</span>
+                      {nota.tarefa_id ? (
+                        <>
+                          virou tarefa <strong>{nota.interpretacao.titulo}</strong>
+                          {nota.interpretacao.local ? ` em ${nota.interpretacao.local}` : ''}
+                          {nota.interpretacao.materiais.length > 0
+                            ? ` · levar ${nota.interpretacao.materiais
+                                .map((m) => `${m.quantidade} ${m.descricao}`)
+                                .join(', ')}`
+                            : ''}
+                          {nota.interpretacao.confianca === 'baixa'
+                            ? ' · interpretação incerta, confira'
+                            : ''}
+                        </>
+                      ) : (
+                        'lida como lembrete, sem ação a executar'
+                      )}
+                    </p>
+                  ) : null}
+
                   <p className="nota__rodape">
                     <span>{dataHoraCurta(nota.criado_em)}</span>
                     {nota.local_id ? <span>· {locais[nota.local_id]}</span> : null}
+                    {nota.tarefa_id ? (
+                      <Link href="/trabalho">· ver na lista de trabalho</Link>
+                    ) : null}
                   </p>
 
                   <div className="nota__acoes nao-imprime">
@@ -180,6 +212,16 @@ export function Anotacoes({
                     >
                       Editar
                     </button>
+                    {!nota.tarefa_id && !nota.interpretada_em ? (
+                      <button
+                        className="etiqueta etiqueta--acao"
+                        type="button"
+                        disabled={ocupado}
+                        onClick={() => executar(() => converterAnotacao(nota.id))}
+                      >
+                        Virar tarefa
+                      </button>
+                    ) : null}
                     <button
                       className="etiqueta etiqueta--acao"
                       type="button"

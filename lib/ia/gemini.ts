@@ -71,7 +71,7 @@ export async function conversar(historico: Turno[]): Promise<RespostaDoTurno> {
     );
   }
 
-  const modelo = process.env.MODELO_GEMINI ?? 'gemini-2.5-flash';
+  const modelo = process.env.MODELO_GEMINI ?? 'gemini-flash-latest';
 
   const resposta = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,

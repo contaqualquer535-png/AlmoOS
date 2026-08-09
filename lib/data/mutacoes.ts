@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { criarClienteServidor } from '@/lib/supabase/server';
 import { analisar } from '@/lib/ia/analise';
+import { interpretarAnotacao } from '@/lib/ia/interpretar';
 import { dataDeHoje } from '@/lib/data/consultas';
 import type {
   CategoriaSuprimento,
@@ -149,7 +150,9 @@ export async function lancarMovimentoDeSuprimento(dados: {
 function revalidarTrabalho(): void {
   revalidatePath('/hoje');
   revalidatePath('/plano');
-  revalidatePath('/tarefas');
+  revalidatePath('/trabalho');
+  revalidatePath('/chamados');
+  revalidatePath('/roteiro');
 }
 
 export async function criarTarefa(dados: {
@@ -234,22 +237,146 @@ function revalidarAnotacoes(): void {
   revalidatePath('/notas');
 }
 
+/**
+ * Grava a anotação e, em seguida, tenta transformá-la em trabalho.
+ *
+ * A ordem importa: a anotação é gravada **antes** de falar com o
+ * modelo. Se a interpretação falhar, demorar ou vier ruim, o texto já
+ * está salvo. Anotação perdida por causa de um enriquecimento opcional
+ * seria o pior desfecho possível — a razão de a tabela existir é
+ * justamente não perder o que se anota no corredor.
+ */
 export async function anotar(dados: {
   texto: string;
   localId?: string;
+  interpretar?: boolean;
 }): Promise<Resultado> {
   const texto = dados.texto.trim();
   if (!texto) return { ok: false, mensagem: 'A anotação está vazia.' };
 
   const supabase = await criarClienteServidor();
-  const { error } = await supabase.from('anotacoes').insert({
-    texto,
-    local_id: dados.localId || null,
-  });
+  const { data: anotacao, error } = await supabase
+    .from('anotacoes')
+    .insert({ texto, local_id: dados.localId || null })
+    .select('id')
+    .single();
 
   if (error) return { ok: false, mensagem: error.message };
 
+  if (dados.interpretar !== false) {
+    // Falha aqui é silenciosa de propósito: a anotação já existe, e
+    // avisar "a IA não conseguiu" no meio de um registro rápido seria
+    // ruído sobre algo que o operador não pediu.
+    await converterAnotacao(anotacao.id as string).catch(() => undefined);
+  }
+
   revalidarAnotacoes();
+  revalidarTrabalho();
+  return { ok: true };
+}
+
+/**
+ * Lê a anotação, pede a interpretação ao modelo e cria a tarefa com os
+ * materiais. Idempotente: anotação já convertida é ignorada.
+ */
+export async function converterAnotacao(id: string): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+
+  const { data: anotacao } = await supabase
+    .from('anotacoes')
+    .select('id, texto, tarefa_id, local_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (!anotacao) return { ok: false, mensagem: 'Anotação não encontrada.' };
+  if (anotacao.tarefa_id) return { ok: true, mensagem: 'Já convertida.' };
+
+  const [locais, itens, suprimentos] = await Promise.all([
+    supabase.from('locais').select('id, codigo').eq('ativo', true),
+    supabase.from('itens_checklist').select('nome').eq('ativo', true),
+    supabase.from('suprimentos').select('id, nome, unidade').eq('ativo', true),
+  ]);
+
+  const codigos = (locais.data ?? []).map((l) => l.codigo as string);
+
+  const lido = await interpretarAnotacao(anotacao.texto as string, {
+    codigos,
+    itens: (itens.data ?? []).map((i) => i.nome as string),
+    suprimentos: (suprimentos.data ?? []).map((s) => s.nome as string),
+  });
+
+  if (!lido) {
+    return { ok: false, mensagem: 'A IA não conseguiu interpretar. O texto está salvo.' };
+  }
+
+  // Lembrete solto não vira tarefa, mas a leitura fica registrada: assim
+  // a tela pode dizer que foi analisada e não ficou pendente de nada.
+  if (!lido.acionavel) {
+    await supabase
+      .from('anotacoes')
+      .update({ interpretada_em: new Date().toISOString(), interpretacao: lido })
+      .eq('id', id);
+
+    revalidarAnotacoes();
+    return { ok: true, mensagem: 'Anotação registrada como lembrete, sem ação.' };
+  }
+
+  const localId =
+    (anotacao.local_id as string | null) ??
+    ((locais.data ?? []).find((l) => l.codigo === lido.local)?.id as string | undefined) ??
+    null;
+
+  const { data: tarefa, error: erroTarefa } = await supabase
+    .from('tarefas')
+    .insert({
+      titulo: lido.titulo,
+      local_id: localId,
+      prazo: lido.prazo,
+      // A procedência fica no próprio registro: quem olhar a tarefa
+      // daqui a um mês precisa saber que o título foi redigido por um
+      // modelo a partir de outra frase.
+      observacao: `Da anotação: "${anotacao.texto}"`,
+    })
+    .select('id')
+    .single();
+
+  if (erroTarefa) return { ok: false, mensagem: erroTarefa.message };
+
+  if (lido.materiais.length > 0) {
+    const porNome = new Map(
+      (suprimentos.data ?? []).map((s) => [
+        (s.nome as string).toLowerCase(),
+        { id: s.id as string, unidade: s.unidade as string },
+      ]),
+    );
+
+    await supabase.from('materiais_planejados').insert(
+      lido.materiais.map((m) => {
+        const casado = porNome.get(m.descricao.toLowerCase());
+        return {
+          tarefa_id: tarefa.id as string,
+          descricao: m.descricao,
+          quantidade: m.quantidade,
+          unidade: casado?.unidade ?? 'un',
+          suprimento_id: casado?.id ?? null,
+        };
+      }),
+    );
+  }
+
+  await supabase
+    .from('anotacoes')
+    .update({
+      tarefa_id: tarefa.id as string,
+      local_id: localId,
+      interpretada_em: new Date().toISOString(),
+      interpretacao: lido,
+    })
+    .eq('id', id);
+
+  revalidarAnotacoes();
+  revalidarTrabalho();
+  revalidatePath('/roteiro');
   return { ok: true };
 }
 
@@ -414,6 +541,7 @@ export async function marcarMaterial(dados: {
   if (error) return { ok: false, mensagem: error.message };
 
   revalidatePath('/roteiro');
+  revalidatePath('/trabalho');
   return { ok: true };
 }
 

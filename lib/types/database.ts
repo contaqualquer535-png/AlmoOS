@@ -265,6 +265,15 @@ export interface Insight {
 
 // ---------- Anotações ----------
 
+export interface InterpretacaoDaAnotacao {
+  titulo: string;
+  local: string | null;
+  materiais: Array<{ descricao: string; quantidade: number }>;
+  prazo: string | null;
+  acionavel: boolean;
+  confianca: 'alta' | 'media' | 'baixa';
+}
+
 export interface Anotacao {
   id: string;
   texto: string;
@@ -272,6 +281,9 @@ export interface Anotacao {
   fixada: boolean;
   arquivada_em: string | null;
   criado_em: string;
+  tarefa_id: string | null;
+  interpretada_em: string | null;
+  interpretacao: InterpretacaoDaAnotacao | null;
 }
 
 // ---------- Mobiliário por sala ----------

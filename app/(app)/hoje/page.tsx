@@ -29,6 +29,7 @@ import { Rosca } from '@/components/Rosca';
 import { CartaoPrevisoes } from '@/components/CartaoPrevisoes';
 import { Anotacoes } from '@/components/Anotacoes';
 import { DistribuicaoDeMobiliario } from '@/components/DistribuicaoDeMobiliario';
+import { FaixaPrioritaria } from '@/components/FaixaPrioritaria';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,6 +141,14 @@ export default async function PaginaHoje() {
             : `${plural(faltamNaRonda, 'sala falta', 'salas faltam')} na ronda`
           : 'Hoje não é dia de ronda'}
       </h1>
+
+      <FaixaPrioritaria
+        pontos={pontos}
+        previsoes={previsoes}
+        pendenciasAntigas={antigas}
+        salasFaltando={faltamNaRonda}
+        ehDiaDeRonda={plano.e_dia_de_ronda}
+      />
 
       <div className="indicadores">
         <div className={`indicador${faltamNaRonda === 0 ? ' indicador--bom' : ''}`}>

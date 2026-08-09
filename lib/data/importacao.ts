@@ -88,7 +88,8 @@ export async function registrarEmailDoServi(bruto: string): Promise<ResultadoDoE
     mensagem_id: string | null;
   };
 
-  revalidatePath('/tarefas');
+  revalidatePath('/chamados');
+  revalidatePath('/trabalho');
   revalidatePath('/hoje');
 
   return {
@@ -440,7 +441,8 @@ export async function importarChamados(
     };
   }
 
-  revalidatePath('/tarefas');
+  revalidatePath('/chamados');
+  revalidatePath('/trabalho');
   revalidatePath('/hoje');
   return {
     ok: true,

@@ -136,6 +136,43 @@ nova.
 
 ---
 
+## 14 — O modelo converte uma vez, na entrada
+
+**Problema.** "Trocar pilha do relógio da sala C-212" contém local, item
+e material — mas em linguagem. SQL não extrai isso, e o operador não vai
+preencher três campos para anotar uma frase no corredor.
+
+**Decisão.** O modelo interpreta a anotação **no momento em que ela é
+gravada**, uma única vez, e o resultado vira tarefa com materiais. Dali
+em diante é dado estruturado: o roteiro soma as pilhas, o plano do dia
+agrega, o relatório conta. Nada volta a passar por modelo.
+
+**Por quê a fronteira aqui.** É a divisão que já aparece nas decisões 09
+e 13: modelo para linguagem, SQL para número. Interpretar frase é o
+único ponto do sistema onde o modelo faz algo que o banco não faria — e
+é onde ele erra pouco, porque o erro é visível na hora.
+
+**A anotação é gravada antes da chamada ao modelo.** Se a interpretação
+falhar, demorar ou vier ruim, o texto está salvo. Perder uma anotação
+por causa de um enriquecimento opcional seria o pior desfecho possível,
+já que a tabela existe justamente para não perder o que se anota.
+
+**Ferramenta implícita é inferência desejada.** "Reapertar lâmpada do
+teto" pede escada sem dizer escada. O prompt recebe a lista de
+ferramentas e é instruído a incluí-las — é o tipo de dedução que
+justifica o modelo estar ali.
+
+**Local inventado é descartado.** O modelo às vezes propõe uma sala
+plausível que não existe. A conversão só aceita código presente na
+tabela; na dúvida, a tarefa fica sem local. Tarefa apontando para sala
+inexistente seria pior do que tarefa sem local.
+
+**A tela declara a procedência.** A anotação mostra o texto original e,
+abaixo, marcado com "IA", o que foi deduzido. Confiança baixa vira aviso
+explícito para conferir.
+
+---
+
 ## 13 — Previsão aritmética antes de previsão de modelo
 
 **Problema.** "A IA precisa prever coisas." Mas a maior parte do que se

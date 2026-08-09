@@ -78,7 +78,12 @@ export async function analisar(contexto: {
     );
   }
 
-  const modelo = process.env.MODELO_GEMINI ?? 'gemini-2.5-flash';
+  // Alias e não versão fixa. Nome de versão envelhece: o Google
+  // aposenta modelos para contas novas e o sistema começa a devolver
+  // 404 sem ninguém ter mexido em nada. O custo do alias é que o modelo
+  // por trás muda sozinho; para uma análise de padrões isso é aceitável,
+  // e MODELO_GEMINI permite fixar quando não for.
+  const modelo = process.env.MODELO_GEMINI ?? 'gemini-flash-latest';
 
   const resposta = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
@@ -101,6 +106,13 @@ export async function analisar(contexto: {
     if (resposta.status === 429) {
       throw new Error(
         'Limite da camada gratuita do Gemini atingido. Tente de novo em alguns minutos.',
+      );
+    }
+    if (resposta.status === 404) {
+      throw new Error(
+        `O modelo "${modelo}" não existe mais ou não está disponível para esta chave. ` +
+          'Remova a variável MODELO_GEMINI para voltar ao alias gemini-flash-latest, ' +
+          'que acompanha os lançamentos.',
       );
     }
     throw new Error(`Gemini respondeu ${resposta.status}: ${await resposta.text()}`);

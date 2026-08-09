@@ -3,24 +3,30 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+/**
+ * Sete abas, agrupadas pelo tipo de pergunta que cada uma responde.
+ *
+ *   Hoje       — como está tudo
+ *   Ronda      — o registro do dia
+ *   Trabalho   — o que depende de mim
+ *   Chamados   — o que depende de terceiro
+ *   Salas      — o inventário de espaços
+ *   Estoque    — o que se gasta e o que se empresta
+ *   Relatórios — o que aconteceu
+ *
+ * Roteiro, Notas, Plantas, Inventário, Assistente e Importar não têm
+ * aba própria: são alcançados de dentro da tela a que pertencem. Aba é
+ * caro — cada uma exige lembrar que existe.
+ */
 const ITENS = [
   { href: '/hoje', rotulo: 'Hoje' },
   { href: '/ronda', rotulo: 'Ronda' },
-  // /planta continua existindo como detalhe de cada sala, mas saiu da
-  // navegação: listar o mesmo conjunto em duas abas obrigava a lembrar
-  // em qual delas estava o que se procura.
+  { href: '/trabalho', rotulo: 'Trabalho' },
+  { href: '/chamados', rotulo: 'Chamados' },
   { href: '/salas', rotulo: 'Salas' },
-  { href: '/suprimentos', rotulo: 'Suprimentos' },
-  { href: '/recursos', rotulo: 'Recursos' },
-  { href: '/inventario', rotulo: 'Inventário' },
-  { href: '/notas', rotulo: 'Notas' },
-  { href: '/pendencias', rotulo: 'Pendências' },
-  { href: '/roteiro', rotulo: 'Roteiro' },
-  { href: '/tarefas', rotulo: 'Tarefas' },
+  { href: '/suprimentos', rotulo: 'Estoque' },
   { href: '/relatorios', rotulo: 'Relatórios' },
-  { href: '/plano', rotulo: 'Plano do dia' },
   { href: '/assistente', rotulo: 'Assistente' },
-  { href: '/importar', rotulo: 'Importar' },
 ] as const;
 
 export function Navegacao() {

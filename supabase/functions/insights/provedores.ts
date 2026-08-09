@@ -192,7 +192,7 @@ export function escolherProvedor(env: Record<string, string | undefined>): Prove
     return claude(chaveClaude, env.MODELO_CLAUDE ?? 'claude-sonnet-5');
   }
   if (preferido === 'gemini' && chaveGemini) {
-    return gemini(chaveGemini, env.MODELO_GEMINI ?? 'gemini-2.5-flash');
+    return gemini(chaveGemini, env.MODELO_GEMINI ?? 'gemini-flash-latest');
   }
   if (preferido === 'compativel' && baseCompativel) {
     // Ollama local não pede chave; os serviços hospedados, sim.
@@ -201,7 +201,7 @@ export function escolherProvedor(env: Record<string, string | undefined>): Prove
 
   // Sem preferência explícita: usa o que tiver chave, Gemini primeiro
   // porque é o que tem camada gratuita sem exigir cartão.
-  if (chaveGemini) return gemini(chaveGemini, env.MODELO_GEMINI ?? 'gemini-2.5-flash');
+  if (chaveGemini) return gemini(chaveGemini, env.MODELO_GEMINI ?? 'gemini-flash-latest');
   if (baseCompativel) {
     return compativel(baseCompativel, env.IA_API_KEY ?? 'nenhuma', env.IA_MODELO ?? 'llama-3.3-70b-versatile');
   }

@@ -364,6 +364,30 @@ export async function buscarAnotacoes(incluirArquivadas = false): Promise<Anotac
   return (data ?? []) as Anotacao[];
 }
 
+export interface AnotacaoDoPeriodo {
+  texto: string;
+  quando: string;
+  local: string | null;
+  virou_tarefa: boolean;
+  concluida: boolean | null;
+  fixada: boolean;
+}
+
+/** Anotações feitas num período, para o relatório. */
+export async function buscarAnotacoesDoPeriodo(
+  inicio: string,
+  fim: string,
+): Promise<AnotacaoDoPeriodo[]> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase.rpc('anotacoes_do_periodo', {
+    p_inicio: inicio,
+    p_fim: fim,
+  });
+
+  if (error) throw descrever('Não foi possível carregar as anotações do período', error);
+  return (data ?? []) as unknown as AnotacaoDoPeriodo[];
+}
+
 // ---------- Mobiliário por sala ----------
 
 export async function buscarMobiliarioPorSala(): Promise<MobiliarioDaSala[]> {

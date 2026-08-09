@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {
   buscarRelatorio,
   buscarRelatoriosSalvos,
+  buscarAnotacoesDoPeriodo,
   dataDeHoje,
   mesDe,
   semanaDe,
@@ -36,10 +37,13 @@ export default async function PaginaRelatorios({
   const inicio = filtro.inicio ?? semana.inicio;
   const fim = filtro.fim ?? semana.fim;
 
-  const [relatorio, salvos] = await Promise.all([
+  const [relatorio, salvos, anotacoes] = await Promise.all([
     buscarRelatorio(inicio, fim),
     buscarRelatoriosSalvos(),
+    buscarAnotacoesDoPeriodo(inicio, fim),
   ]);
+
+  const anotacoesFeitas = anotacoes.filter((a) => a.concluida === true).length;
 
   const ehSemana = inicio === semana.inicio && fim === semana.fim;
   const tipo = ehSemana ? 'semanal' : inicio === mes.inicio && fim === mes.fim ? 'mensal' : 'diario';
@@ -165,6 +169,48 @@ export default async function PaginaRelatorios({
                   <li className="linha" key={i.item}>
                     <span className="linha__principal">{i.item}</span>
                     <span className="linha__medida">{i.aberturas}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* As anotações contam a parte do trabalho que não deixa
+              rastro nas tabelas de ronda e chamado — o combinado
+              informal, a observação de corredor. Sem elas o relatório
+              descreve o sistema, não a semana. */}
+          <section className="secao">
+            <div className="secao__cabeca">
+              <h2 className="secao__titulo">Anotações do período</h2>
+              <span className="secao__contagem">
+                {anotacoes.length > 0
+                  ? `${anotacoesFeitas} de ${anotacoes.length} concluídas`
+                  : '—'}
+              </span>
+            </div>
+
+            {anotacoes.length === 0 ? (
+              <p className="vazio">Nenhuma anotação no período.</p>
+            ) : (
+              <ul className="linhas">
+                {anotacoes.map((a, i) => (
+                  <li className="linha" key={`${a.quando}-${i}`}>
+                    <span className="linha__codigo">{dataCurta(a.quando)}</span>
+                    <span className="linha__principal">
+                      <span className="linha__titulo">{a.texto}</span>
+                      {a.local ? <span className="linha__nota">{a.local}</span> : null}
+                    </span>
+                    <span
+                      className={`linha__medida${
+                        a.concluida === true ? '' : a.virou_tarefa ? ' linha__medida--alerta' : ''
+                      }`}
+                    >
+                      {a.concluida === true
+                        ? 'feito'
+                        : a.virou_tarefa
+                          ? 'pendente'
+                          : 'só nota'}
+                    </span>
                   </li>
                 ))}
               </ul>

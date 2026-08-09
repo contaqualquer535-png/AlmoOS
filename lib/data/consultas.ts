@@ -8,6 +8,7 @@ import type {
   Chamado,
   DiaDaSerie,
   Insight,
+  Painel,
   PontoDeAtencao,
   Relatorio,
   RelatorioSalvo,
@@ -144,6 +145,7 @@ export interface ItemChecklist {
   id: string;
   nome: string;
   ordem: number;
+  pede_quantidade: boolean;
 }
 
 export interface LocalBasico {
@@ -158,7 +160,7 @@ export async function buscarItensChecklist(): Promise<ItemChecklist[]> {
   const supabase = await criarClienteServidor();
   const { data, error } = await supabase
     .from('itens_checklist')
-    .select('id, nome, ordem')
+    .select('id, nome, ordem, pede_quantidade')
     .eq('ativo', true)
     .order('ordem');
 
@@ -179,24 +181,53 @@ export async function buscarLocalPorCodigo(codigo: string): Promise<LocalBasico 
 }
 
 /** O que já foi lançado hoje neste local, indexado por item. */
+export interface LancamentoDoDia {
+  status: StatusVerificacao;
+  observacao: string | null;
+  quantidade: number | null;
+}
+
 export async function buscarVerificacoesDoDia(
   localId: string,
   data: string,
-): Promise<Record<string, { status: StatusVerificacao; observacao: string | null }>> {
+): Promise<Record<string, LancamentoDoDia>> {
   const supabase = await criarClienteServidor();
   const { data: linhas, error } = await supabase
     .from('verificacoes')
-    .select('item_id, status, observacao')
+    .select('item_id, status, observacao, quantidade')
     .eq('local_id', localId)
     .eq('data', data);
 
   if (error) throw descrever('Não foi possível carregar os lançamentos', error);
 
-  const porItem: Record<string, { status: StatusVerificacao; observacao: string | null }> = {};
+  const porItem: Record<string, LancamentoDoDia> = {};
   for (const linha of linhas ?? []) {
     porItem[linha.item_id as string] = {
       status: linha.status as StatusVerificacao,
       observacao: (linha.observacao as string | null) ?? null,
+      quantidade: (linha.quantidade as number | null) ?? null,
+    };
+  }
+  return porItem;
+}
+
+/** Última contagem conhecida de cada item contável naquela sala. */
+export async function buscarContagemAnterior(
+  localId: string,
+): Promise<Record<string, { quantidade: number; contado_em: string }>> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase
+    .from('vw_contagem_por_sala')
+    .select('item_id, quantidade, contado_em')
+    .eq('local_id', localId);
+
+  if (error) throw descrever('Não foi possível carregar as contagens', error);
+
+  const porItem: Record<string, { quantidade: number; contado_em: string }> = {};
+  for (const linha of data ?? []) {
+    porItem[linha.item_id as string] = {
+      quantidade: linha.quantidade as number,
+      contado_em: linha.contado_em as string,
     };
   }
   return porItem;
@@ -295,6 +326,19 @@ export async function buscarPendenciasPorBloco(): Promise<BlocoDaSerie[]> {
 
   if (error) throw descrever('Não foi possível carregar as pendências por bloco', error);
   return (data ?? []) as unknown as BlocoDaSerie[];
+}
+
+// ---------- Painel ----------
+
+/** Todos os agregados da tela inicial numa ida ao banco. */
+export async function buscarPainel(dias = 90): Promise<Painel> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase.rpc('montar_painel', {
+    p_dias_de_historico: dias,
+  });
+
+  if (error) throw descrever('Não foi possível montar o painel', error);
+  return data as unknown as Painel;
 }
 
 // ---------- Ação rápida ----------

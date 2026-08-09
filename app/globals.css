@@ -189,37 +189,310 @@ a {
   }
 }
 
+/* ---------- Mosaico do painel ---------- */
+/* Duas colunas compridas ainda é rolagem. O mosaico troca altura por
+   largura: cada cartão tem teto de altura e rola por dentro, então o
+   conjunto inteiro cabe numa tela de 1920 e a posição de cada coisa não
+   muda conforme os dados crescem — o olho aprende onde procurar. */
+
+.conteudo:has(.mosaico) {
+  max-width: var(--largura-painel);
+}
+
+.mosaico {
+  display: grid;
+  /* 17rem cabe seis colunas em 1920 e ainda deixa código de sala,
+     descrição e número na mesma linha sem cortar. */
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.625rem;
+  margin-top: 1rem;
+  align-items: start;
+  font-size: 0.8125rem;
+}
+
+/* Ocupa duas colunas quando houver espaço: gráfico de série e faixa de
+   salas ficam ilegíveis espremidos. */
+.mosaico__largo {
+  grid-column: span 1;
+}
+
+@media (min-width: 900px) {
+  .mosaico__largo {
+    grid-column: span 2;
+  }
+}
+
+.cartao {
+  border: 1px solid var(--regua);
+  border-radius: var(--raio);
+  background: var(--papel-alto);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cartao__cabeca {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-bottom: 1px solid var(--regua);
+}
+
+.cartao__titulo {
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.cartao__contagem {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  color: var(--tinta-fraca);
+  margin-left: auto;
+}
+
+.cartao__corpo {
+  padding: 0.375rem 0.625rem 0.625rem;
+  overflow-y: auto;
+  max-height: 13rem;
+}
+
+.cartao__corpo--alto {
+  max-height: 19rem;
+}
+
+.cartao__corpo--solto {
+  overflow: visible;
+  max-height: none;
+}
+
+/* Dentro do cartão as listas ficam mais apertadas: o cartão já é a
+   moldura, e o respiro de tela cheia aqui vira desperdício. */
+.cartao__corpo .linha {
+  padding: 0.1875rem 0;
+  gap: 0.4375rem;
+  font-size: 0.8125rem;
+}
+
+.cartao__corpo .linha__codigo {
+  width: auto;
+  min-width: 3.25rem;
+  font-size: 0.6875rem;
+}
+
+.cartao__corpo .linha__principal {
+  min-width: 0;
+}
+
+.cartao__corpo .linha__titulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cartao__corpo .linha__nota {
+  font-size: 0.6875rem;
+  margin-top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cartao__corpo .linha__medida {
+  font-size: 0.6875rem;
+}
+
+.cartao__corpo .etiqueta {
+  font-size: 0.5625rem;
+  padding: 0 0.25rem;
+}
+
+/* ---------- Barras compactas ---------- */
+
+.barrinhas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.barrinha {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0;
+}
+
+.barrinha__rotulo {
+  font-size: 0.75rem;
+  color: var(--tinta-media);
+  width: 5.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barrinha__trilho {
+  flex: 1;
+  height: 0.5rem;
+  background: var(--papel);
+  border: 1px solid var(--regua);
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.barrinha__preenchimento {
+  display: block;
+  height: 100%;
+  background: var(--ambar);
+}
+
+.barrinha__preenchimento--critico {
+  background: var(--tijolo);
+}
+
+.barrinha__valor {
+  font-family: var(--fonte-mono);
+  font-size: 0.6875rem;
+  width: 1.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Abertas × fechadas por semana ---------- */
+
+.semanal {
+  margin: 0;
+}
+
+.semanal__barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 3.5rem;
+}
+
+.semanal__semana {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 100%;
+}
+
+.semanal__barra {
+  flex: 1;
+  border-radius: 1px 1px 0 0;
+  min-height: 2px;
+}
+
+.semanal__barra--abriu {
+  background: var(--tijolo);
+}
+
+.semanal__barra--fechou {
+  background: var(--verde);
+}
+
+.semanal__legenda {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  font-size: 0.6875rem;
+  color: var(--tinta-fraca);
+  margin-top: 0.375rem;
+}
+
+.semanal__chave--abriu::before {
+  background: var(--tijolo);
+}
+
+.semanal__chave--fechou::before {
+  background: var(--verde);
+}
+
+.semanal__saldo {
+  margin-left: auto;
+  color: var(--verde);
+  font-weight: 600;
+}
+
+.semanal__saldo--negativo {
+  color: var(--tijolo);
+}
+
+.cartao__corpo .vazio {
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+}
+
+/* Componentes que trazem a própria moldura de seção precisam abrir mão
+   dela aqui: o cartão já é a moldura. */
+.cartao__corpo .secao {
+  margin-top: 0.875rem;
+}
+
+.cartao__corpo .secao:first-child {
+  margin-top: 0;
+}
+
+.cartao__corpo .secao__cabeca {
+  border-bottom: none;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.cartao__corpo .secao__titulo {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+}
+
+.cartao__rodape {
+  padding: 0.5rem 0.875rem;
+  border-top: 1px solid var(--regua);
+}
+
+.cartao__rodape a {
+  font-size: 0.8125rem;
+}
+
 /* Faixa de números no topo, antes de qualquer lista. */
 .indicadores {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
   gap: 1px;
   background: var(--regua);
   border: 1px solid var(--regua);
   border-radius: var(--raio);
-  margin-top: 1.25rem;
+  margin-top: 1rem;
   overflow: hidden;
 }
 
 .indicador {
   background: var(--papel-alto);
-  padding: 0.75rem 0.875rem;
+  padding: 0.5rem 0.625rem;
 }
 
 .indicador__valor {
   display: block;
   font-family: var(--fonte-mono);
-  font-size: 1.5rem;
-  font-weight: 600;
-  line-height: 1.1;
+  font-size: 1.375rem;
+  font-weight: 650;
+  line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
 
 .indicador__rotulo {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--tinta-fraca);
-  margin-top: 0.25rem;
+  margin-top: 0.125rem;
+  line-height: 1.3;
 }
 
 .indicador--alerta .indicador__valor {
@@ -1285,6 +1558,34 @@ a.azulejo:hover {
 
 .item-ronda__nota {
   margin-top: 0.5rem;
+}
+
+/* Contagem de mesas e cadeiras, ao lado dos códigos. */
+.item-ronda__contagem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.item-ronda__contagem .campo__entrada {
+  width: 5rem;
+  text-align: center;
+  font-family: var(--fonte-mono);
+  margin: 0;
+}
+
+/* A diferença em relação à última contagem é o sinal que importa:
+   cadeira sumindo aos poucos só aparece na comparação. */
+.item-ronda__diferenca {
+  font-family: var(--fonte-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--verde);
+}
+
+.item-ronda__diferenca--menos {
+  color: var(--tijolo);
 }
 
 .opcao {

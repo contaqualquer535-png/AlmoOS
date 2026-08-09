@@ -6,8 +6,10 @@ import { usePathname } from 'next/navigation';
 const ITENS = [
   { href: '/hoje', rotulo: 'Hoje' },
   { href: '/ronda', rotulo: 'Ronda' },
+  // /planta continua existindo como detalhe de cada sala, mas saiu da
+  // navegação: listar o mesmo conjunto em duas abas obrigava a lembrar
+  // em qual delas estava o que se procura.
   { href: '/salas', rotulo: 'Salas' },
-  { href: '/planta', rotulo: 'Plantas' },
   { href: '/suprimentos', rotulo: 'Suprimentos' },
   { href: '/recursos', rotulo: 'Recursos' },
   { href: '/inventario', rotulo: 'Inventário' },

@@ -270,6 +270,45 @@ export const ROTULO_PONTO: Record<TipoPontoDeAtencao, string> = {
   ronda_incompleta: 'Ronda',
 };
 
+// ---------- Painel ----------
+
+export interface Painel {
+  gerado_em: string;
+  janela_dias: number;
+  ranking_itens: Array<{ item: string; aberturas: number }>;
+  ranking_locais: Array<{
+    codigo: string;
+    bloco: string | null;
+    aberturas: number;
+    itens: string;
+  }>;
+  idade_pendencias: {
+    ate_7: number;
+    de_7_14: number;
+    de_14_30: number;
+    mais_30: number;
+  };
+  semanas: Array<{ semana: string; abertas: number; fechadas: number }>;
+  vencimentos: Array<{
+    quando: string;
+    tipo: 'recurso' | 'tarefa' | 'inventario' | 'suprimento';
+    descricao: string;
+    detalhe: string;
+  }>;
+  chamados_por_fila: Array<{ fila: string; abertos: number }>;
+  dias_medios_ate_fechar: number | null;
+  contagem_atual: Record<string, number>;
+  perdas_de_contagem: Array<{
+    codigo: string;
+    item: string;
+    agora: number;
+    antes: number;
+    diferenca: number;
+    contado_em: string;
+  }>;
+  consumo_semanal: Array<{ nome: string; semana: string; consumido: number }>;
+}
+
 // ---------- Relatórios ----------
 
 export type TipoRelatorio = 'diario' | 'semanal' | 'mensal';

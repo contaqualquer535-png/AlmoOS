@@ -5,6 +5,7 @@ import {
   buscarLocalPorCodigo,
   buscarItensChecklist,
   buscarVerificacoesDoDia,
+  buscarContagemAnterior,
   dataDeHoje,
 } from '@/lib/data/consultas';
 import { dataPorExtenso } from '@/lib/formato';
@@ -22,9 +23,10 @@ export default async function PaginaRondaDoLocal({
 
   if (!local) notFound();
 
-  const [itens, lancados] = await Promise.all([
+  const [itens, lancados, anteriores] = await Promise.all([
     buscarItensChecklist(),
     buscarVerificacoesDoDia(local.id, dataDeHoje()),
+    buscarContagemAnterior(local.id),
   ]);
 
   return (
@@ -43,7 +45,12 @@ export default async function PaginaRondaDoLocal({
           </span>
         </div>
 
-        <FormularioRonda localId={local.id} itens={itens} lancados={lancados} />
+        <FormularioRonda
+          localId={local.id}
+          itens={itens}
+          lancados={lancados}
+          anteriores={anteriores}
+        />
       </section>
 
       <p style={{ marginTop: '2rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

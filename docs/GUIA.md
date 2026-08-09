@@ -71,7 +71,7 @@ npm install
 npx supabase login
 npx supabase link --project-ref SEU_REF   # o ref está na URL do painel
 npx supabase db push                      # aplica supabase/migrations/
-npx supabase db query --file supabase/seed.sql
+npx supabase db query --file supabase/seed.sql --linked
 ```
 
 Isso carrega os ambientes reais: 25 locais, 17 turmas, 8 itens de

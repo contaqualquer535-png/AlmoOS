@@ -36,14 +36,15 @@ app/
   (app)/hoje         resumo do dia
   (app)/ronda        lançamento do checklist, sala a sala
   (app)/inventario   patrimônio, empréstimo e histórico de movimentação
-  (app)/salas        todos os ambientes, turma vigente e pendências
+  (app)/salas        todos os ambientes, turma vigente, planta e pendências
+  (app)/recursos     extensão, cabo, controle: quantos há e com quem
   (app)/suprimentos  consumo e reposição
   (app)/assistente   chat com ferramentas, escrita sob confirmação
   (app)/importar     carga de CSV: patrimônio, ronda em papel, chamados
   (app)/relatorios   agregação por período, ao vivo e congelada
   (app)/tarefas      tarefas internas e chamados ao SEAMB
   (app)/chamados/:id conversa do chamado, vinda dos e-mails do SERVi
-  (app)/planta       índice das salas e planta de cada uma
+  (app)/planta/:cod  planta da sala; o índice foi absorvido por /salas
   (app)/plano        folha de trabalho imprimível
   login         e-mail/senha e Google
 lib/

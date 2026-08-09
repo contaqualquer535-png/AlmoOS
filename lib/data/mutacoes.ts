@@ -45,6 +45,7 @@ export async function lancarVerificacao(dados: {
   itemId: string;
   status: StatusVerificacao;
   observacao?: string;
+  quantidade?: number | null;
 }): Promise<Resultado> {
   if (!STATUS_VALIDOS.includes(dados.status)) {
     return { ok: false, mensagem: 'Status inválido.' };
@@ -52,6 +53,11 @@ export async function lancarVerificacao(dados: {
 
   const supabase = await criarClienteServidor();
   const observacao = dados.observacao?.trim() || null;
+
+  const quantidade =
+    dados.quantidade === null || dados.quantidade === undefined
+      ? null
+      : Math.max(0, Math.trunc(dados.quantidade));
 
   // upsert na chave (local, item, data): repetir o lançamento corrige,
   // não duplica. É o mesmo caminho que a sincronização offline vai usar.
@@ -62,6 +68,7 @@ export async function lancarVerificacao(dados: {
       data: dataDeHoje(),
       status: dados.status,
       observacao,
+      quantidade,
       sincronizado_em: new Date().toISOString(),
     },
     { onConflict: 'local_id,item_id,data' },
@@ -70,6 +77,34 @@ export async function lancarVerificacao(dados: {
   if (error) {
     return { ok: false, mensagem: error.message };
   }
+
+  revalidatePath('/hoje');
+  revalidatePath('/plano');
+  revalidatePath('/ronda');
+  return { ok: true };
+}
+
+/**
+ * Apaga o lançamento de hoje daquele item.
+ *
+ * Existe porque tocar no código errado não tinha desfazer: como a chave
+ * é (local, item, data), o único caminho era trocar por outro código, e
+ * "nenhum código" era inalcançável. A trigger de pendências trata o
+ * delete — um M apagado descarta a pendência que ele abriu.
+ */
+export async function apagarVerificacao(dados: {
+  localId: string;
+  itemId: string;
+}): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase
+    .from('verificacoes')
+    .delete()
+    .eq('local_id', dados.localId)
+    .eq('item_id', dados.itemId)
+    .eq('data', dataDeHoje());
+
+  if (error) return { ok: false, mensagem: error.message };
 
   revalidatePath('/hoje');
   revalidatePath('/plano');

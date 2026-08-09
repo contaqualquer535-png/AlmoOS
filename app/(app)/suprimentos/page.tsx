@@ -1,66 +1,58 @@
 import { buscarSuprimentos } from '@/lib/data/consultas';
-import { quantidade, plural } from '@/lib/formato';
-import { LancarSuprimento } from '@/components/LancarSuprimento';
+import { plural } from '@/lib/formato';
+import { PainelSuprimentos } from '@/components/PainelSuprimentos';
 
 export const dynamic = 'force-dynamic';
 
-const ROTULO_CATEGORIA: Record<string, string> = {
-  copa: 'Copa',
-  manutencao: 'Manutenção',
-  limpeza: 'Limpeza',
-};
-
 export default async function PaginaSuprimentos() {
   const suprimentos = await buscarSuprimentos();
-  const categorias = [...new Set(suprimentos.map((s) => s.categoria))];
+
+  const repor = suprimentos.filter((s) => s.abaixo_do_ponto);
+  const acabando = suprimentos.filter(
+    (s) => !s.abaixo_do_ponto && s.dias_restantes !== null && s.dias_restantes <= 14,
+  );
+  const negativos = suprimentos.filter((s) => s.quantidade_atual < 0);
 
   return (
     <>
-      <p className="sobrescrito">Estoque</p>
+      <p className="sobrescrito">Copa, manutenção e limpeza</p>
       <h1 className="titulo">Suprimentos</h1>
+
+      <div className="indicadores">
+        <div className="indicador">
+          <span className="indicador__valor">{suprimentos.length}</span>
+          <span className="indicador__rotulo">itens em controle</span>
+        </div>
+        <div className={`indicador${repor.length > 0 ? ' indicador--alerta' : ' indicador--bom'}`}>
+          <span className="indicador__valor">{repor.length}</span>
+          <span className="indicador__rotulo">abaixo do ponto de reposição</span>
+        </div>
+        <div className={`indicador${acabando.length > 0 ? ' indicador--alerta' : ''}`}>
+          <span className="indicador__valor">{acabando.length}</span>
+          <span className="indicador__rotulo">acabam em duas semanas</span>
+        </div>
+        <div className={`indicador${negativos.length > 0 ? ' indicador--critico' : ''}`}>
+          <span className="indicador__valor">{negativos.length}</span>
+          <span className="indicador__rotulo">com saldo negativo</span>
+        </div>
+      </div>
+
+      {negativos.length > 0 ? (
+        <p className="aviso aviso--folga">
+          <span className="aviso__marcador">Saldo negativo</span>
+          <span>
+            {plural(negativos.length, 'item', 'itens')} com saldo abaixo de zero:{' '}
+            {negativos.map((s) => s.nome).join(', ')}. Significa reposição não
+            registrada — use &ldquo;Contei&rdquo; para acertar.
+          </span>
+        </p>
+      ) : null}
 
       {suprimentos.length === 0 ? (
         <p className="vazio">Nenhum suprimento cadastrado.</p>
-      ) : (
-        categorias.map((categoria) => (
-          <section className="secao" key={categoria}>
-            <div className="secao__cabeca">
-              <h2 className="secao__titulo">{ROTULO_CATEGORIA[categoria] ?? categoria}</h2>
-              <span className="secao__contagem">
-                {suprimentos.filter((s) => s.categoria === categoria && s.abaixo_do_ponto)
-                  .length}{' '}
-                para repor
-              </span>
-            </div>
+      ) : null}
 
-            <ul className="linhas">
-              {suprimentos
-                .filter((s) => s.categoria === categoria)
-                .map((s) => (
-                  <li className="linha linha--empilha" key={s.id}>
-                    <span className="linha__principal">
-                      <span className="linha__titulo">{s.nome}</span>
-                      <span className="linha__nota">
-                        {quantidade(s.quantidade_atual, s.unidade)} em estoque
-                        {s.dias_restantes !== null
-                          ? ` · dura mais ${plural(s.dias_restantes, 'dia', 'dias')}`
-                          : ''}
-                      </span>
-                    </span>
-                    <LancarSuprimento suprimentoId={s.id} unidade={s.unidade} />
-                    <span
-                      className={`linha__medida${
-                        s.abaixo_do_ponto ? ' linha__medida--alerta' : ''
-                      }`}
-                    >
-                      {s.abaixo_do_ponto ? 'repor' : 'ok'}
-                    </span>
-                  </li>
-                ))}
-            </ul>
-          </section>
-        ))
-      )}
+      <PainelSuprimentos suprimentos={suprimentos} />
     </>
   );
 }

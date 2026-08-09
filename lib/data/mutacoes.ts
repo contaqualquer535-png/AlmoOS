@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { criarClienteServidor } from '@/lib/supabase/server';
 import { dataDeHoje } from '@/lib/data/consultas';
 import type {
+  CategoriaSuprimento,
   ElementoPlanta,
   PrioridadeChamado,
   StatusChamado,
@@ -186,6 +187,239 @@ export async function anotarProgresso(id: string, observacao: string): Promise<R
   if (error) return { ok: false, mensagem: error.message };
 
   revalidarTrabalho();
+  return { ok: true };
+}
+
+// ---------- Recursos emprestáveis ----------
+
+function revalidarRecursos(): void {
+  revalidatePath('/recursos');
+  revalidatePath('/hoje');
+}
+
+export async function salvarRecurso(dados: {
+  id?: string;
+  nome: string;
+  descricao?: string;
+  unidade?: string;
+  quantidadeTotal: number;
+  minimoDesejado: number;
+  localGuardaId?: string;
+}): Promise<Resultado> {
+  const nome = dados.nome.trim();
+  if (!nome) return { ok: false, mensagem: 'O recurso precisa de um nome.' };
+
+  if (!Number.isInteger(dados.quantidadeTotal) || dados.quantidadeTotal < 0) {
+    return { ok: false, mensagem: 'A quantidade total precisa ser um inteiro não negativo.' };
+  }
+
+  const supabase = await criarClienteServidor();
+  const linha = {
+    nome,
+    descricao: dados.descricao?.trim() || null,
+    unidade: dados.unidade?.trim() || 'un',
+    quantidade_total: dados.quantidadeTotal,
+    minimo_desejado: Math.max(0, dados.minimoDesejado),
+    local_guarda_id: dados.localGuardaId || null,
+  };
+
+  const { error } = dados.id
+    ? await supabase.from('recursos').update(linha).eq('id', dados.id)
+    : await supabase.from('recursos').insert(linha);
+
+  if (error) {
+    if (error.code === '23505') {
+      return { ok: false, mensagem: `Já existe um recurso chamado "${nome}".` };
+    }
+    return { ok: false, mensagem: error.message };
+  }
+
+  revalidarRecursos();
+  return { ok: true };
+}
+
+/**
+ * Registra uma retirada. A trigger no banco recusa levar mais do que
+ * existe e devolve a frase pronta — por isso aqui não há conferência de
+ * saldo: duplicá-la criaria duas verdades sobre quantas extensões há.
+ */
+export async function retirarRecurso(dados: {
+  recursoId: string;
+  quantidade: number;
+  responsavel?: string;
+  localId?: string;
+  previsaoDevolucao?: string;
+  observacao?: string;
+}): Promise<Resultado> {
+  if (!Number.isInteger(dados.quantidade) || dados.quantidade <= 0) {
+    return { ok: false, mensagem: 'Informe uma quantidade inteira maior que zero.' };
+  }
+
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('emprestimos_recurso').insert({
+    recurso_id: dados.recursoId,
+    quantidade: dados.quantidade,
+    responsavel: dados.responsavel?.trim() || null,
+    local_id: dados.localId || null,
+    previsao_devolucao: dados.previsaoDevolucao || null,
+    observacao: dados.observacao?.trim() || null,
+  });
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidarRecursos();
+  return { ok: true };
+}
+
+/**
+ * Devolve tudo ou parte de uma retirada.
+ *
+ * Devolução parcial fecha a linha original e abre outra com o resto. Um
+ * decremento simples perderia a informação de que aquela pessoa levou
+ * três e ficou com uma — que é exatamente o que se quer saber depois.
+ */
+export async function devolverRecurso(dados: {
+  emprestimoId: string;
+  quantidade?: number;
+}): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+
+  const { data: emprestimo, error: erroLeitura } = await supabase
+    .from('emprestimos_recurso')
+    .select('*')
+    .eq('id', dados.emprestimoId)
+    .maybeSingle();
+
+  if (erroLeitura) return { ok: false, mensagem: erroLeitura.message };
+  if (!emprestimo) return { ok: false, mensagem: 'Retirada não encontrada.' };
+  if (emprestimo.devolvido_em) return { ok: false, mensagem: 'Esta retirada já foi devolvida.' };
+
+  const total = emprestimo.quantidade as number;
+  const devolvida = dados.quantidade ?? total;
+
+  if (!Number.isInteger(devolvida) || devolvida <= 0 || devolvida > total) {
+    return { ok: false, mensagem: `Informe entre 1 e ${total}.` };
+  }
+
+  const agora = new Date().toISOString();
+
+  if (devolvida < total) {
+    const { error } = await supabase.from('emprestimos_recurso').insert({
+      recurso_id: emprestimo.recurso_id,
+      quantidade: total - devolvida,
+      responsavel: emprestimo.responsavel,
+      local_id: emprestimo.local_id,
+      previsao_devolucao: emprestimo.previsao_devolucao,
+      observacao: emprestimo.observacao,
+      retirado_em: emprestimo.retirado_em,
+    });
+    if (error) return { ok: false, mensagem: error.message };
+  }
+
+  const { error } = await supabase
+    .from('emprestimos_recurso')
+    .update({ devolvido_em: agora, quantidade: devolvida })
+    .eq('id', dados.emprestimoId);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidarRecursos();
+  return { ok: true };
+}
+
+// ---------- Suprimentos: cadastro e parâmetros ----------
+
+export async function salvarSuprimento(dados: {
+  id?: string;
+  nome: string;
+  categoria: CategoriaSuprimento;
+  unidade: string;
+  pontoReposicao: number;
+}): Promise<Resultado> {
+  const nome = dados.nome.trim();
+  if (!nome) return { ok: false, mensagem: 'O suprimento precisa de um nome.' };
+  if (!Number.isFinite(dados.pontoReposicao) || dados.pontoReposicao < 0) {
+    return { ok: false, mensagem: 'O ponto de reposição não pode ser negativo.' };
+  }
+
+  const supabase = await criarClienteServidor();
+  // quantidade_atual fica de fora de propósito: ela é derivada dos
+  // movimentos por trigger (decisão 06). Corrigir saldo é lançar um
+  // movimento de ajuste, não editar o número.
+  const linha = {
+    nome,
+    categoria: dados.categoria,
+    unidade: dados.unidade.trim() || 'un',
+    ponto_reposicao: dados.pontoReposicao,
+  };
+
+  const { error } = dados.id
+    ? await supabase.from('suprimentos').update(linha).eq('id', dados.id)
+    : await supabase.from('suprimentos').insert(linha);
+
+  if (error) {
+    if (error.code === '23505') {
+      return { ok: false, mensagem: `Já existe um suprimento chamado "${nome}".` };
+    }
+    return { ok: false, mensagem: error.message };
+  }
+
+  revalidatePath('/suprimentos');
+  revalidatePath('/hoje');
+  return { ok: true };
+}
+
+export async function desativarSuprimento(id: string): Promise<Resultado> {
+  const supabase = await criarClienteServidor();
+  const { error } = await supabase.from('suprimentos').update({ ativo: false }).eq('id', id);
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath('/suprimentos');
+  revalidatePath('/hoje');
+  return { ok: true };
+}
+
+/**
+ * Correção de saldo por contagem física.
+ *
+ * Grava a diferença como movimento do tipo `ajuste`, em vez de escrever
+ * o saldo direto: assim a correção aparece no histórico com data e
+ * motivo, e o saldo continua sendo sempre a soma dos movimentos.
+ */
+export async function ajustarSaldo(dados: {
+  suprimentoId: string;
+  saldoContado: number;
+  observacao?: string;
+}): Promise<Resultado> {
+  if (!Number.isFinite(dados.saldoContado)) {
+    return { ok: false, mensagem: 'Informe o saldo contado.' };
+  }
+
+  const supabase = await criarClienteServidor();
+  const { data: atual, error: erroLeitura } = await supabase
+    .from('suprimentos')
+    .select('quantidade_atual')
+    .eq('id', dados.suprimentoId)
+    .maybeSingle();
+
+  if (erroLeitura) return { ok: false, mensagem: erroLeitura.message };
+  if (!atual) return { ok: false, mensagem: 'Suprimento não encontrado.' };
+
+  const diferenca = dados.saldoContado - (atual.quantidade_atual as number);
+  if (diferenca === 0) return { ok: true, mensagem: 'O saldo já era esse.' };
+
+  const { error } = await supabase.from('movimentos_suprimento').insert({
+    suprimento_id: dados.suprimentoId,
+    tipo: 'ajuste',
+    quantidade: diferenca,
+    observacao: dados.observacao?.trim() || 'contagem física',
+  });
+
+  if (error) return { ok: false, mensagem: error.message };
+
+  revalidatePath('/suprimentos');
+  revalidatePath('/hoje');
   return { ok: true };
 }
 

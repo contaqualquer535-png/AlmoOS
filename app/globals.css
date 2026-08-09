@@ -291,6 +291,57 @@ a {
   background: var(--regua);
 }
 
+/* ---------- Rosca ---------- */
+
+.rosca {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rosca__tela {
+  width: 8.75rem;
+  height: 8.75rem;
+  flex-shrink: 0;
+}
+
+.rosca__centro {
+  font-family: var(--fonte-mono);
+  font-size: 20px;
+  font-weight: 650;
+  fill: var(--tinta);
+}
+
+.rosca__legenda-centro {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: var(--tinta-fraca);
+}
+
+.rosca__legenda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  font-size: 0.8125rem;
+  color: var(--tinta-media);
+}
+
+.rosca__chave {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+}
+
+.rosca__ponto {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 .barras {
   list-style: none;
   margin: 0;
@@ -803,6 +854,172 @@ a.azulejo:hover {
   padding: 0.75rem;
   overflow-x: auto;
   margin: 0.75rem 0;
+}
+
+/* ---------- Ação rápida ---------- */
+/* Fica sobre tudo, no canto, e abre com Ctrl+K. A premissa é que
+   registrar não pode custar navegação: se anotar exige achar a tela
+   certa, o operador anota no papel e o sistema fica com um buraco. */
+
+.acao-rapida__gatilho {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--verde);
+  background: var(--verde);
+  color: #fff;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(21 31 26 / 18%);
+  z-index: 40;
+}
+
+.acao-rapida__gatilho:hover {
+  background: #17513a;
+}
+
+.acao-rapida {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: min(30rem, calc(100vw - 3rem));
+  background: var(--papel-alto);
+  border: 1px solid var(--regua-forte);
+  border-radius: var(--raio);
+  box-shadow: 0 4px 20px rgb(21 31 26 / 16%);
+  z-index: 40;
+}
+
+.acao-rapida__cabeca {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--regua);
+}
+
+.acao-rapida__abas {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.acao-rapida__fechar {
+  border: none;
+  background: none;
+  color: var(--tinta-fraca);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+.acao-rapida__corpo {
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.acao-rapida__corpo .campo__entrada {
+  margin: 0;
+}
+
+.acao-rapida__linha {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.acao-rapida__linha .campo__entrada {
+  flex: 1;
+  min-width: 0;
+}
+
+.acao-rapida__feito {
+  color: var(--verde);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ---------- Recursos ---------- */
+/* O número disponível é a resposta que a tela existe para dar, então
+   ele vem em corpo grande e o resto se subordina. */
+
+.recurso {
+  list-style: none;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--regua);
+}
+
+.recurso:last-child {
+  border-bottom: none;
+}
+
+.recurso__linha {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.recurso__disponivel {
+  font-family: var(--fonte-mono);
+  font-size: 1.75rem;
+  font-weight: 650;
+  line-height: 1;
+  min-width: 2.5rem;
+  text-align: right;
+  color: var(--verde);
+  font-variant-numeric: tabular-nums;
+}
+
+.recurso__disponivel--baixo {
+  color: var(--ambar);
+}
+
+.recurso__principal {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.recurso__nome {
+  display: block;
+  font-weight: 500;
+}
+
+/* As retiradas recuam sob o recurso: são detalhe dele, não item de lista. */
+.recurso__fora {
+  list-style: none;
+  margin: 0.625rem 0 0;
+  padding: 0 0 0 3.5rem;
+  border-left: 2px solid var(--regua);
+  margin-left: 0.75rem;
+}
+
+.recurso__retirada {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+}
+
+.recurso__quantidade {
+  font-family: var(--fonte-mono);
+  font-weight: 600;
+  min-width: 1.5rem;
+}
+
+.recurso__destino {
+  flex: 1;
+  min-width: 8rem;
+  color: var(--tinta-media);
 }
 
 /* ---------- Conversa do chamado ---------- */

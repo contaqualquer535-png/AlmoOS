@@ -8,6 +8,8 @@ import {
   buscarRelatorio,
   buscarPontosDeAtencao,
   buscarUltimoInsight,
+  buscarContagemDeMobiliario,
+  buscarRecursos,
   agruparPorBloco,
   dataDeHoje,
   semanaDe,
@@ -17,6 +19,7 @@ import { Carimbo } from '@/components/Carimbo';
 import { GraficoRonda } from '@/components/GraficoRonda';
 import { BarrasPorBloco } from '@/components/BarrasPorBloco';
 import { PontosDeAtencao } from '@/components/PontosDeAtencao';
+import { Rosca } from '@/components/Rosca';
 
 // O plano muda ao longo do dia conforme a ronda entra.
 export const dynamic = 'force-dynamic';
@@ -25,23 +28,67 @@ export default async function PaginaHoje() {
   const hoje = dataDeHoje();
   const semana = semanaDe(hoje);
 
-  const [plano, ronda, suprimentos, serie, porBloco, daSemana, pontos, insight] =
-    await Promise.all([
-      buscarPlanoDoDia(hoje),
-      buscarStatusDaRonda(),
-      buscarSuprimentos(),
-      buscarSerieDaRonda(30),
-      buscarPendenciasPorBloco(),
-      buscarRelatorio(semana.inicio, semana.fim),
-      buscarPontosDeAtencao(),
-      buscarUltimoInsight(),
-    ]);
+  const [
+    plano,
+    ronda,
+    suprimentos,
+    serie,
+    porBloco,
+    daSemana,
+    pontos,
+    insight,
+    mobiliario,
+    recursos,
+  ] = await Promise.all([
+    buscarPlanoDoDia(hoje),
+    buscarStatusDaRonda(),
+    buscarSuprimentos(),
+    buscarSerieDaRonda(30),
+    buscarPendenciasPorBloco(),
+    buscarRelatorio(semana.inicio, semana.fim),
+    buscarPontosDeAtencao(),
+    buscarUltimoInsight(),
+    buscarContagemDeMobiliario(),
+    buscarRecursos(),
+  ]);
 
   const rondaPorBloco = agruparPorBloco(ronda);
   const faltamNaRonda = ronda.filter((l) => l.itens_registrados < l.itens_esperados).length;
   const criticos = suprimentos.filter((s) => s.abaixo_do_ponto);
   const emAberto = plano.pendencias.length;
   const antigas = plano.pendencias.filter((p) => p.dias_aberta >= 14).length;
+
+  const recursosFora = recursos.recursos.reduce((s, r) => s + r.quantidade_emprestada, 0);
+  const recursosVencidos = recursos.recursos.reduce((s, r) => s + r.retiradas_atrasadas, 0);
+
+  const estadoDasClasses = [
+    { rotulo: 'Em ordem', valor: mobiliario.classes_em_ordem, cor: 'var(--verde)' },
+    { rotulo: 'Quebradas', valor: mobiliario.classes_quebradas, cor: 'var(--tijolo)' },
+    { rotulo: 'Faltando', valor: mobiliario.classes_faltando, cor: 'var(--ambar)' },
+  ];
+
+  const codigosDaSemana = [
+    {
+      rotulo: 'Ok',
+      valor: daSemana.verificacoes_por_status.ok ?? 0,
+      cor: 'var(--verde)',
+    },
+    {
+      rotulo: 'Manutenção',
+      valor: daSemana.verificacoes_por_status.manutencao ?? 0,
+      cor: 'var(--ambar)',
+    },
+    {
+      rotulo: 'Resolvido',
+      valor: daSemana.verificacoes_por_status.resolvido ?? 0,
+      cor: 'var(--tinta-media)',
+    },
+    {
+      rotulo: 'Trocado',
+      valor: daSemana.verificacoes_por_status.trocado ?? 0,
+      cor: 'var(--regua-forte)',
+    },
+  ];
 
   return (
     <>
@@ -92,6 +139,28 @@ export default async function PaginaHoje() {
             {daSemana.ronda.cobertura !== null ? `${daSemana.ronda.cobertura}%` : '—'}
           </span>
           <span className="indicador__rotulo">cobertura da ronda na semana</span>
+        </div>
+        <div
+          className={`indicador${
+            mobiliario.classes_quebradas + mobiliario.classes_faltando > 0
+              ? ' indicador--alerta'
+              : ''
+          }`}
+        >
+          <span className="indicador__valor">{mobiliario.total_classes}</span>
+          <span className="indicador__rotulo">
+            classes no CETEC
+            {mobiliario.classes_quebradas + mobiliario.classes_faltando > 0
+              ? ` · ${mobiliario.classes_quebradas + mobiliario.classes_faltando} fora de ordem`
+              : ''}
+          </span>
+        </div>
+        <div className={`indicador${recursosVencidos > 0 ? ' indicador--critico' : ''}`}>
+          <span className="indicador__valor">{recursosFora}</span>
+          <span className="indicador__rotulo">
+            recursos emprestados
+            {recursosVencidos > 0 ? ` · ${recursosVencidos} vencidos` : ''}
+          </span>
         </div>
       </div>
 
@@ -240,9 +309,80 @@ export default async function PaginaHoje() {
 
           <section className="secao">
             <div className="secao__cabeca">
+              <h2 className="secao__titulo">Classes</h2>
+              <span className="secao__contagem">
+                {mobiliario.salas_com_planta} salas desenhadas
+              </span>
+            </div>
+            <Rosca
+              fatias={estadoDasClasses}
+              centro={String(mobiliario.total_classes)}
+              legendaCentro="no total"
+            />
+          </section>
+
+          <section className="secao">
+            <div className="secao__cabeca">
               <h2 className="secao__titulo">Ronda nos 30 dias</h2>
             </div>
             <GraficoRonda serie={serie} />
+          </section>
+
+          <section className="secao">
+            <div className="secao__cabeca">
+              <h2 className="secao__titulo">Códigos da semana</h2>
+            </div>
+            <Rosca
+              fatias={codigosDaSemana}
+              centro={String(daSemana.ronda.feito)}
+              legendaCentro="lançamentos"
+            />
+          </section>
+
+          <section className="secao">
+            <div className="secao__cabeca">
+              <h2 className="secao__titulo">O que está fora</h2>
+              <span className="secao__contagem">{recursosFora} unidades</span>
+            </div>
+
+            {recursos.emprestimos.length === 0 ? (
+              <p className="vazio">Nada emprestado no momento.</p>
+            ) : (
+              <ul className="linhas">
+                {recursos.emprestimos.slice(0, 8).map((emprestimo) => {
+                  const recurso = recursos.recursos.find(
+                    (r) => r.id === emprestimo.recurso_id,
+                  );
+                  const atrasado =
+                    emprestimo.previsao_devolucao !== null &&
+                    emprestimo.previsao_devolucao < hoje;
+
+                  return (
+                    <li className="linha" key={emprestimo.id}>
+                      <span className="linha__codigo">{emprestimo.quantidade}×</span>
+                      <span className="linha__principal">
+                        <span className="linha__titulo">{recurso?.nome ?? 'recurso'}</span>
+                        <span className="linha__nota">
+                          {emprestimo.responsavel ?? 'sem responsável'}
+                          {emprestimo.local_id
+                            ? ` · ${recursos.locais[emprestimo.local_id]}`
+                            : ''}
+                        </span>
+                      </span>
+                      {atrasado ? (
+                        <span className="linha__medida linha__medida--critico">vencido</span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <p style={{ marginTop: '0.75rem' }}>
+              <Link className="botao botao--discreto" href="/recursos">
+                Ver recursos
+              </Link>
+            </p>
           </section>
 
           <section className="secao">

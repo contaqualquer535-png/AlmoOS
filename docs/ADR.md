@@ -136,6 +136,36 @@ nova.
 
 ---
 
+## 12 — Recurso é a terceira forma de "coisa"
+
+**Problema.** Extensão elétrica não cabia em nada. `suprimentos` tem
+quantidade mas é consumido e não volta. `inventario` volta, mas é peça
+única com patrimônio. Extensão é quantidade **e** volta: você tem sete,
+empresta três, quer saber quantas sobraram e com quem.
+
+**Decisão.** Tabela `recursos` (quantidade total) e
+`emprestimos_recurso` (uma linha por retirada aberta). Disponível é
+total menos a soma das retiradas abertas, em `vw_recursos_status`.
+
+**Por quê não etiquetar cada uma como patrimônio.** Resolveria no papel.
+Na prática ninguém lê código de barras de extensão no corredor — contar
+é o gesto natural para esse tipo de coisa, e o modelo tem que caber no
+gesto.
+
+**Devolução parcial abre linha nova.** "Levei 3, devolvi 1" fecha a
+retirada original com quantidade 1 e cria outra com 2. Um decremento de
+contador perderia justamente o que se quer saber depois: quem ainda está
+com o quê.
+
+**A guarda mora no banco.** Uma trigger recusa emprestar mais do que
+existe. A aplicação não repete a conferência — duas verdades sobre
+quantas extensões há seria pior do que nenhuma.
+
+**Devolver nunca é bloqueado.** A trigger só roda em retirada aberta. Se
+o número estiver errado, receber de volta é o que conserta.
+
+---
+
 ## 11 — No app, espelho é descartável; fila não
 
 **Problema.** O SQLite do aparelho guarda duas coisas muito diferentes:

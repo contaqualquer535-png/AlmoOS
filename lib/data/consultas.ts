@@ -14,7 +14,10 @@ import type {
   StatusVerificacao,
   Tarefa,
   ClasseStatusAtual,
+  ContagemDeMobiliario,
+  EmprestimoDeRecurso,
   ItemInventario,
+  RecursoStatus,
   LocalComTurmas,
   MovimentacaoInventario,
   PendenciaAberta,
@@ -292,6 +295,114 @@ export async function buscarPendenciasPorBloco(): Promise<BlocoDaSerie[]> {
 
   if (error) throw descrever('Não foi possível carregar as pendências por bloco', error);
   return (data ?? []) as unknown as BlocoDaSerie[];
+}
+
+// ---------- Ação rápida ----------
+
+export interface OpcoesDeAcaoRapida {
+  ambientes: LocalBasico[];
+  suprimentos: Array<{ id: string; nome: string; unidade: string }>;
+  recursos: Array<{ id: string; nome: string; disponivel: number }>;
+}
+
+/**
+ * Alimenta o lançador que existe em todas as telas.
+ *
+ * Roda no layout, ou seja, em toda navegação. São três selects pequenos
+ * e sem join; o custo é menor do que o de fazer o operador navegar até a
+ * tela certa para anotar uma linha.
+ */
+export async function buscarOpcoesDeAcaoRapida(): Promise<OpcoesDeAcaoRapida> {
+  const supabase = await criarClienteServidor();
+
+  const [locais, suprimentos, recursos] = await Promise.all([
+    supabase
+      .from('locais')
+      .select('id, codigo, nome, bloco')
+      .eq('ativo', true)
+      .order('codigo'),
+    supabase.from('suprimentos').select('id, nome, unidade').eq('ativo', true).order('nome'),
+    supabase.from('vw_recursos_status').select('id, nome, quantidade_disponivel').order('nome'),
+  ]);
+
+  return {
+    ambientes: (locais.data ?? []) as LocalBasico[],
+    suprimentos: (suprimentos.data ?? []) as Array<{
+      id: string;
+      nome: string;
+      unidade: string;
+    }>,
+    recursos: (recursos.data ?? []).map((r) => ({
+      id: r.id as string,
+      nome: r.nome as string,
+      disponivel: r.quantidade_disponivel as number,
+    })),
+  };
+}
+
+// ---------- Recursos ----------
+
+export interface RecursosEmTela {
+  recursos: RecursoStatus[];
+  emprestimos: EmprestimoDeRecurso[];
+  locais: Record<string, string>;
+}
+
+/**
+ * Recursos com o que está fora de cada um.
+ *
+ * Os empréstimos vêm todos de uma vez e são agrupados na tela, em vez de
+ * uma consulta por recurso: são poucas dezenas de linhas abertas, e um
+ * N+1 aqui custaria mais do que trazer tudo.
+ */
+export async function buscarRecursos(): Promise<RecursosEmTela> {
+  const supabase = await criarClienteServidor();
+
+  const [recursos, emprestimos, locais] = await Promise.all([
+    supabase.from('vw_recursos_status').select('*').order('nome'),
+    supabase
+      .from('emprestimos_recurso')
+      .select('*')
+      .is('devolvido_em', null)
+      .order('retirado_em', { ascending: false }),
+    supabase.from('locais').select('id, codigo').eq('ativo', true),
+  ]);
+
+  if (recursos.error) throw descrever('Não foi possível carregar os recursos', recursos.error);
+  if (emprestimos.error) {
+    throw descrever('Não foi possível carregar as retiradas', emprestimos.error);
+  }
+  if (locais.error) throw descrever('Não foi possível carregar os locais', locais.error);
+
+  const porId: Record<string, string> = {};
+  for (const l of locais.data ?? []) porId[l.id as string] = l.codigo as string;
+
+  return {
+    recursos: (recursos.data ?? []) as RecursoStatus[],
+    emprestimos: (emprestimos.data ?? []) as EmprestimoDeRecurso[],
+    locais: porId,
+  };
+}
+
+/** Total de classes no CETEC e em que estado estão. Uma linha só. */
+export async function buscarContagemDeMobiliario(): Promise<ContagemDeMobiliario> {
+  const supabase = await criarClienteServidor();
+  const { data, error } = await supabase
+    .from('vw_contagem_mobiliario')
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw descrever('Não foi possível contar as classes', error);
+
+  return (
+    (data as ContagemDeMobiliario | null) ?? {
+      total_classes: 0,
+      classes_quebradas: 0,
+      classes_faltando: 0,
+      classes_em_ordem: 0,
+      salas_com_planta: 0,
+    }
+  );
 }
 
 // ---------- Inventário ----------

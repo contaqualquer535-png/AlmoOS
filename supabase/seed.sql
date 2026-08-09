@@ -89,6 +89,23 @@ insert into public.suprimentos (nome, categoria, unidade, ponto_reposicao) value
   ('Marcador de quadro','manutencao', 'un',     6)
 on conflict (nome) do nothing;
 
+-- ---------- Recursos emprestáveis ----------
+-- Quantidades em zero de propósito: o número real você ajusta na tela,
+-- e um chute aqui viraria dado errado difícil de perceber.
+insert into public.recursos (nome, unidade, quantidade_total, minimo_desejado, local_guarda_id)
+select v.nome, 'un', 0, v.minimo, l.id
+from (values
+  ('Extensão elétrica',   2),
+  ('Cabo HDMI',           1),
+  ('Adaptador VGA/HDMI',  1),
+  ('Controle de projetor',1),
+  ('Caixa de som',        0),
+  ('Régua de tomada',     1)
+) as v(nome, minimo)
+cross join public.locais l
+where l.codigo = 'ALMOX'
+on conflict (nome) do nothing;
+
 -- ---------- Plantas: layout padrão de sala de aula ----------
 -- Ponto de partida, não retrato fiel: grid 7×7 com quadro e mesa do
 -- professor na frente, projetor na segunda fila e 30 classes em 5×6.

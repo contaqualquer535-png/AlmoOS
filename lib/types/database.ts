@@ -321,6 +321,44 @@ export interface BlocoDaSerie {
   dias_da_mais_antiga: number;
 }
 
+// ---------- Recursos emprestáveis por quantidade ----------
+
+export interface RecursoStatus {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  unidade: string;
+  quantidade_total: number;
+  minimo_desejado: number;
+  local_guarda_id: string | null;
+  local_guarda: string | null;
+  quantidade_emprestada: number;
+  quantidade_disponivel: number;
+  retiradas_abertas: number;
+  abaixo_do_minimo: boolean;
+  retiradas_atrasadas: number;
+}
+
+export interface EmprestimoDeRecurso {
+  id: string;
+  recurso_id: string;
+  quantidade: number;
+  responsavel: string | null;
+  local_id: string | null;
+  observacao: string | null;
+  retirado_em: string;
+  previsao_devolucao: string | null;
+  devolvido_em: string | null;
+}
+
+export interface ContagemDeMobiliario {
+  total_classes: number;
+  classes_quebradas: number;
+  classes_faltando: number;
+  classes_em_ordem: number;
+  salas_com_planta: number;
+}
+
 // ---------- Inventário ----------
 
 export interface ItemInventario {
